@@ -13,6 +13,7 @@ Initial audit on 2026-11-19 found no root `user_requests/` directory. Recheck be
 - Give each surface a clear focal point and keep contextual actions near their content. Preserve swipe and selection where currently available. In landscape, let readouts and their associated actions or lists sit alongside each other when width permits.
 
 ## Dependency Versions & Design Token Mappings
+- AndroidX Fragment Compose `1.9.1` hosts the existing fragment controllers inside Foundation HorizontalPager with selected-page lifecycle and saved-state support.
 - `sh.calvin.reorderable:reorderable:3.1.0` provides lazy-list drag handles and edge autoscroll for existing custom alarm ordering, replacing app-owned drag bookkeeping as screens migrate.
 - Current build uses stable Compose BOM `2026.09.00` (UI and runtime `1.12.1`) with Material 3 explicitly pinned to the approved `1.5.0-beta02`. Its AAR requires compile SDK 37.0. Minimum SDK 26 and target SDK 36 retain their existing values.
 
@@ -44,7 +45,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Timer duration picker — `MyTimePickerDialogDialog.kt` and its layout. Preserve hours 0–23 and minutes/seconds 0–59, initial selection and confirm-only callback. Support localized numeric input and touch adjustment.
 - [x] Timer editor — `EditTimerDialog.kt`. Group duration picker, label and sound in a scrollable form with existing input ranges and save semantics.
 - [x] Timers — `TimerFragment.kt` and `TimerAdapter.kt`. Use a determinate wavy indicator for the active timer, with non-motion status and accessible controls. Preserve event updates, start/pause/reset, sorting, edit/delete and permission handling.
-- [~] Compose pager host — replace the temporary RtlViewPager and shell XML with Foundation HorizontalPager and lifecycle-aware AndroidFragment hosts for the now-Compose tab content. Preserve RTL swipes, fragment controllers, selected-page persistence, deep links, shortcuts and cross-tab callbacks.
+- [x] Compose pager host — replace the temporary RtlViewPager and shell XML with Foundation HorizontalPager and lifecycle-aware AndroidFragment hosts for the now-Compose tab content. Preserve RTL swipes, fragment controllers, selected-page persistence, deep links, shortcuts and cross-tab callbacks.
 - [ ] Ringing alarm — `AlarmActivity.kt` and `activity_alarm.xml`. Feature the alarm label and time, with spring-return drag feedback and TalkBack-accessible snooze/dismiss actions. Preserve lock-screen flags, thresholds, haptics and exactly-once dispatch.
 - [ ] Snooze reminder — `SnoozeReminderActivity.kt` and its duration dialog call sites. Use grouped duration choices with the original range and timing.
 - [ ] Alarm intent selector — `SelectAlarmDialog.kt` and `IntentHandlerActivity.kt` UI call site. Preserve dismiss alarm matching, selection and finish behavior.
@@ -73,3 +74,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Timer duration picker `3134ca55` — verified wheel and keypad, 23:59:59 and zero boundaries, existing ten-second fallback, all dismissal paths, and compact IME actions. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Timer editor `6bd02782` — verified edit/new, duration confirmation and cancel, labels and keyboard, sound and vibration, saved defaults and ACTION_SET_TIMER through the running state. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Timers `7d909121` — verified countdown states, permissions, multi-select/delete, custom drag order, sorting and warm/cold timer jumps on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`. Rapid Reset then Pause can hit an unsafe cast in the unchanged timer controller before the Room refresh.
+- Compose pager `0539dec0` — verified tab swipes in LTR/RTL, rotation, process restoration with stable controller identities, cold/warm shortcuts and jumps, sort/menu routes and audio result forwarding on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
