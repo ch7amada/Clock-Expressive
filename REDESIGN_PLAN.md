@@ -55,7 +55,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Digital widget configuration — `WidgetDigitalConfigureActivity.kt` and its app-owned configuration layout. Pair a live preview with color and opacity controls, preserving widget result protocol and formatting.
 - [x] Analogue widget configuration — `WidgetAnalogueConfigureActivity.kt` and its app-owned configuration layout. Match the digital config hierarchy and preserve its analogue face and preference semantics.
 - [x] Alarm and timer sound chooser — migrate the app call sites to a Compose chooser while reusing Fossify sound lookup and preserving preview, custom-file permission/result, recent sounds and deletion callbacks.
-- [ ] Permission and first-alarm prompts — use Expressive app-owned message surfaces for permission explanations and the one-time alarm confirmation, preserving Android permission and Settings actions.
+- [~] Permission and first-alarm prompts — use Expressive app-owned message surfaces for permission explanations and the one-time alarm confirmation, preserving Android permission and Settings actions.
 - [ ] Alarm switch preference — apply the existing Fossify checked-thumb icon preference to the Compose Alarm list as well as Settings.
 - [ ] Shared Fossify UI audit and follow-through — audit dependency-owned About, appearance customization, and color picker boundaries. Preserve suite-wide functionality and document any retained upstream View content.
 - [ ] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
