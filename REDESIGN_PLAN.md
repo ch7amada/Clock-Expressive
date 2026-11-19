@@ -131,3 +131,5 @@ The latest screenshot shows a large upcoming-alarm banner above a much smaller s
 - [~] Replace the Fossify appearance routes with Clock-owned System, Dark and Light modes and a System palette or curated colors. Remove the Settings widget customization route. Investigate the reported crash and verify changes on device.
 - [ ] Balance Alarm cards and increase floating action button sizes while preserving compact layouts and callbacks.
 - [ ] Redesign the hosted digital and analogue widgets with original, expressive shapes inspired by Google Clock. Preserve launcher time and widget compatibility.
+
+The user supplied two additional visual references. The first pairs a large violet dial with sparse, aligned world-clock rows and a coral add action. The second uses equal-size alarm tiles, tall numerals and clear coral enabled versus muted violet disabled states. Use these as direction for strong time typography, saturated active colors and quiet inactive states. Keep Clock's own layout and assets. Include a plum and coral appearance option so the reference palette is available without overriding wallpaper colors for everyone.
