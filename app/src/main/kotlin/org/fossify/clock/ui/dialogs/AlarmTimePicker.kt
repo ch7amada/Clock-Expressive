@@ -129,7 +129,7 @@ private fun AlarmTimePicker(
     val colors = MaterialTheme.colorScheme
     val configuration = LocalConfiguration.current
     val margin = if (configuration.screenWidthDp < 360) 8.dp else 16.dp
-    val maxWidth = if (configuration.screenWidthDp > configuration.screenHeightDp) 648.dp else 400.dp
+    val dialogMaxWidth = if (configuration.screenWidthDp > configuration.screenHeightDp) 648.dp else 400.dp
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Box(
@@ -142,13 +142,14 @@ private fun AlarmTimePicker(
             contentAlignment = Alignment.Center,
         ) {
             Surface(
-                modifier = Modifier.widthIn(max = maxWidth).fillMaxWidth(),
+                modifier = Modifier.widthIn(max = dialogMaxWidth).fillMaxWidth(),
                 color = colors.surfaceContainerHigh,
                 shape = MaterialTheme.shapes.extraLarge,
             ) {
                 BoxWithConstraints {
-                    val horizontalPadding = if (maxWidth < 336.dp) 8.dp else 16.dp
-                    val layout = if (maxWidth >= 628.dp) {
+                    val availableWidth = this.maxWidth
+                    val horizontalPadding = if (availableWidth < 336.dp) 8.dp else 16.dp
+                    val layout = if (availableWidth >= 628.dp) {
                         TimePickerLayoutType.Horizontal
                     } else {
                         TimePickerLayoutType.Vertical

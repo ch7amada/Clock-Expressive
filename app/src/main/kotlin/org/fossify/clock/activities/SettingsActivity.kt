@@ -3,6 +3,7 @@ package org.fossify.clock.activities
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,7 +72,11 @@ class SettingsActivity : SimpleActivity() {
                         onCustomizeColors = { startCustomizationActivity() },
                         onCustomizeWidgetColors = ::customizeWidgetColors,
                         onPurchaseThankYou = { launchPurchaseThankYouIntent() },
-                        onChangeLanguage = { launchChangeAppLanguageIntent() },
+                        onChangeLanguage = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                launchChangeAppLanguageIntent()
+                            }
+                        },
                         onUseEnglish = {
                             config.useEnglish = it
                             exitProcess(0)

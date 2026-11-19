@@ -135,7 +135,7 @@ private enum class DurationUnit(val label: Int, val seconds: Int, val maximum: I
 private fun TimerDurationPicker(initialSeconds: Int, onCancel: () -> Unit, onConfirm: (Int) -> Unit) {
     val title = stringResource(CommonsR.string.duration)
     val configuration = LocalConfiguration.current
-    val locale = ConfigurationCompat.getLocales(configuration)[0] ?: Locale.getDefault()
+    val locale = ConfigurationCompat.getLocales(configuration)[0] ?: Locale.ROOT
     val gutter = if (configuration.screenWidthDp < 360) 8.dp else 0.dp
     val formatter = remember(locale) {
         NumberFormat.getIntegerInstance(locale).apply {
