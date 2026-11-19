@@ -29,7 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.MediumExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
@@ -104,7 +104,7 @@ internal fun TimerScreen(
     val selecting = selectedIds.isNotEmpty()
     val listState = rememberLazyListState()
     val haptics = LocalHapticFeedback.current
-    val bottomPadding = if (selecting) 16.dp else 88.dp
+    val bottomPadding = if (selecting) 16.dp else 104.dp
     val reorderState = rememberReorderableLazyListState(
         lazyListState = listState,
         scrollThresholdPadding = PaddingValues(bottom = bottomPadding),
@@ -233,7 +233,7 @@ internal fun TimerScreen(
                         if (compactLandscape) {
                             FloatingActionButton(onClick = onAdd, modifier = addModifier, content = addIcon)
                         } else {
-                            ExtendedFloatingActionButton(
+                            MediumExtendedFloatingActionButton(
                                 text = { Text(addDescription, Modifier.clearAndSetSemantics {}) },
                                 icon = addIcon,
                                 onClick = onAdd,

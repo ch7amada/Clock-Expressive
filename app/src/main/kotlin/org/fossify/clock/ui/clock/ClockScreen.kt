@@ -27,7 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MediumFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -138,7 +138,7 @@ internal fun ClockScreen(
                             timeZones = timeZones,
                             selectedIds = selectedIds,
                             modifier = Modifier.weight(1f).fillMaxHeight()
-                                .padding(end = if (sideBySide && !selecting) 72.dp else 0.dp),
+                                .padding(end = if (sideBySide && !selecting) 88.dp else 0.dp),
                             hero = if (sideBySide) null else hero,
                             nextAlarm = if (sideBySide) nextAlarm else "",
                             row = { zone ->
@@ -157,7 +157,7 @@ internal fun ClockScreen(
                         )
                     }
                     if (!selecting) {
-                        FloatingActionButton(
+                        MediumFloatingActionButton(
                             onClick = onAdd,
                             modifier = Modifier.align(Alignment.BottomEnd).padding(end = gutter, bottom = 16.dp),
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -186,7 +186,7 @@ private fun ZoneList(
     LazyColumn(
         state = state,
         modifier = modifier,
-        contentPadding = PaddingValues(top = 12.dp, bottom = if (selectedIds.isEmpty()) 88.dp else 16.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = if (selectedIds.isEmpty()) 104.dp else 16.dp),
     ) {
         if (hero != null) {
             item(key = "local_clock", contentType = "local_clock") {
