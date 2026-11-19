@@ -107,9 +107,10 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 The user found the Compose migration visually improved but too close to standard Material 3. The first pass reused similarly rounded cards and controls across tabs. Give each tab a recognizable layout and make motion respond to meaningful state changes. Preserve current callbacks, timing, navigation, preferences and accessibility. Verify before/after imagery and interaction on the emulator.
 
 - [x] Stopwatch — an asymmetric, oversized timing face with a connected control cluster. Running changes the silhouette and tonal role, and the lap table reads as a distinct timing history.
-- [~] World Clock — a large local time composition with asymmetric nested shapes, distinct time/date hierarchy, and supporting next-alarm and zone regions.
-- [ ] Alarm — emphasize the next occurrence and make enabled, disabled and selected alarms visually distinct. Preserve reorder, switch and contextual actions.
+- [x] World Clock — a large local time composition with asymmetric nested shapes, distinct time/date hierarchy, and supporting next-alarm and zone regions.
+- [~] Alarm — emphasize the next occurrence and make enabled, disabled and selected alarms visually distinct. Preserve reorder, switch and contextual actions.
 - [ ] Timer — distinguish running countdowns from idle presets through placement, shape and determinate progress. Keep timer ordering and controls intact.
 - [ ] Shell and supporting flows — carry the same shape, typography and motion decisions into navigation, the ringing alarm, editors and Settings.
 
 - Stopwatch visual pass `1e99f7a8` — verified stopped, running and paused states, connected actions, lap/sort/reset and compact landscape on API 37. Foss debug and lint passed.
+- World Clock visual pass `f33afe20` — verified light/dark hierarchy, RTL, compact large type, time semantics and zone operations on API 37. Foss debug and lint passed.
