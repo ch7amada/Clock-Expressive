@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,24 +15,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
@@ -41,7 +34,6 @@ import com.google.android.material.R as MaterialR
 import org.fossify.clock.R
 import org.fossify.commons.R as CommonsR
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun AlarmEditorContent(
     time: String,
@@ -88,33 +80,18 @@ internal fun AlarmEditorContent(
                             .padding(start = padding, top = padding, end = padding, bottom = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = colors.primaryContainer,
+                        ReminderEditorTicket(
+                            value = time,
+                            supportingText = daylessLabel?.let { stringResource(it) },
+                            clickLabel = selectTime,
+                            icon = R.drawable.ic_clock_vector,
+                            color = colors.primary,
+                            contentColor = colors.onPrimary,
+                            graphicColor = colors.primaryContainer,
+                            graphicContentColor = colors.onPrimaryContainer,
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .clickable(role = Role.Button, onClickLabel = selectTime) {
-                                        focus.clearFocus()
-                                        onTimeClick()
-                                    }
-                                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        text = time,
-                                        style = MaterialTheme.typography.displaySmallEmphasized
-                                            .copy(fontFeatureSettings = "tnum"),
-                                    )
-                                    daylessLabel?.let {
-                                        Text("(${stringResource(it)})", style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                }
-                                Icon(painterResource(R.drawable.ic_clock_vector), contentDescription = null)
-                            }
+                            focus.clearFocus()
+                            onTimeClick()
                         }
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
@@ -149,20 +126,16 @@ internal fun AlarmEditorContent(
                             onVibrateChange = onVibrateChange,
                         )
                     }
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(start = padding, end = padding, bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                    ) {
-                        TextButton(onClick = onCancel) {
-                            Text(stringResource(CommonsR.string.cancel))
-                        }
-                        Button(onClick = {
+                    ReminderEditorActions(
+                        modifier = Modifier.padding(start = padding, end = padding, bottom = 12.dp),
+                        color = colors.primary,
+                        contentColor = colors.onPrimary,
+                        onCancel = onCancel,
+                        onConfirm = {
                             focus.clearFocus()
                             onConfirm()
-                        }) {
-                            Text(stringResource(CommonsR.string.ok))
-                        }
-                    }
+                        },
+                    )
                 }
             }
         }
