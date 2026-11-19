@@ -40,7 +40,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Zone picker — `AddTimeZonesDialog.kt` and `SelectTimeZonesAdapter.kt`. Preserve ordering, checkbox selection and confirmation with a scrollable Compose list and stable keys.
 - [x] Zone editor — `EditTimeZoneDialog.kt`. Preserve title edits, dismissal, and clearing a title to restore its default.
 - [x] World clock — `ClockFragment.kt`, `TimeZonesAdapter.kt`, and clock readout views. Feature the local time and next alarm, with date, UTC offsets and zone times in supporting tonal rows. Preserve tick cadence, 12/24-hour format and zone ordering.
-- [~] Stopwatch — `StopwatchFragment.kt` and `StopwatchAdapter.kt`. Pair a high-contrast time readout with expressive Start/Pause and Lap/Reset controls. Preserve timing, service binding, lap deltas, ordering and landscape access.
+- [x] Stopwatch — `StopwatchFragment.kt` and `StopwatchAdapter.kt`. Pair a high-contrast time readout with expressive Start/Pause and Lap/Reset controls. Preserve timing, service binding, lap deltas, ordering and landscape access.
 - [ ] Timer duration picker — `MyTimePickerDialogDialog.kt` and its layout. Preserve hours 0–23 and minutes/seconds 0–59, initial selection and confirm-only callback. Support localized numeric input and touch adjustment.
 - [ ] Timer editor — `EditTimerDialog.kt`. Group duration picker, label and sound in a scrollable form with existing input ranges and save semantics.
 - [ ] Timers — `TimerFragment.kt` and `TimerAdapter.kt`. Use a determinate wavy indicator for the active timer, with non-motion status and accessible controls. Preserve event updates, start/pause/reset, sorting, edit/delete and permission handling.
@@ -68,3 +68,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Zone picker `12444db0` — verified catalog order, multi-select, long-list scrolling, confirmation persistence and all cancellation paths on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Zone editor `7075c769` — verified initial focus, keyboard, trimmed names, default reset and cancellation on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - World Clock `3d9e360c` — verified ticking, 12/24 format, next alarm, zone offsets and dates, add/rename/multi-delete, cancellation, and 320 dp large-font reflow on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
+- Stopwatch `bb16bf33` — verified elapsed display, lap recording and sorts, scroll reset, start/pause/resume/reset, orientation, and shortcut routes on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
