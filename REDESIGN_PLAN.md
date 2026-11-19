@@ -33,7 +33,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [ ] Latest-alpha upgrade — adopt Material 3 1.6.0-alpha01 and Compose BOM 2026.11.01 when Google Maven serves both, then verify resolved dependencies and component behavior.
 - [x] Main shell — `MainActivity.kt`, `activity_main.xml`, and `ViewPagerAdapter.kt`. Keep page swipe, starting tab, extras, shortcuts, reselection, tab-specific sort menu and sound results. Use compact `ShortNavigationBar` with an inset background and selection indicator, preserving tab labels. Keep Info and Settings reachable.
 - [x] Alarm time picker — `EditAlarmDialog.kt` and a new Compose time picker host. Replace both existing theme-dependent picker paths, preserving initialized hour/minute, clock format, validation and cancel contract.
-- [~] Alarm editor — `EditAlarmDialog.kt`. Lead with selected time and group weekday toggles, label, sound, vibration and reminder options; retain add/edit/delete and scheduling callbacks.
+- [x] Alarm editor — `EditAlarmDialog.kt`. Lead with selected time and group weekday toggles, label, sound, vibration and reminder options; retain add/edit/delete and scheduling callbacks.
 - [ ] Alarm sort — `ChangeAlarmSortDialog.kt`. Use tonal radio rows for existing sort choices and direction without changing persisted sort values.
 - [ ] Alarm list — `AlarmFragment.kt` and `AlarmsAdapter.kt`. Group alarm time and recurrence in tonal rows with accessible switches, keep selection, add, edit, bulk actions and permission flows.
 - [ ] Zone picker — `AddTimeZonesDialog.kt` and `SelectTimeZonesAdapter.kt`. Preserve search, selection and confirmation with a scrollable Compose list and stable keys.
@@ -62,3 +62,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Foundation `f5d4e368` — added Compose alongside View Binding and implemented the shared Expressive theme. Foss debug assembled, AAR metadata validation passed and unit tests reported `NO-SOURCE`. Dependency insight confirmed the Material 3 beta and Compose runtime pins.
 - Main shell `9c9a2214` — Compose header and four-tab navigation. Foss debug assembled and emulator checks passed for tab selection, swipes, timer intent and sort visibility. Unit test task reported `NO-SOURCE`.
 - Alarm time picker `46095fc4` — verified dial, keypad, confirmation, cancellation, narrow portrait and landscape IME on emulator. Build passed. Unit tests reported `NO-SOURCE`.
+- Alarm editor `e747be3e` — verified edit/new, time picker, weekday and vibration, label and IME, ordinary sound selection, cancellation, and save through first-run permission on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
