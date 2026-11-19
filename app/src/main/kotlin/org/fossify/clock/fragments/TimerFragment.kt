@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
@@ -13,6 +14,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.fossify.clock.R
@@ -54,6 +56,7 @@ class TimerFragment : Fragment() {
     private var skipNextPlacementAnimation = false
     private var refreshRequest = 0L
     private val pendingDeletes = mutableSetOf<Int>()
+    private val pendingResets = mutableStateMapOf<Int, Job>()
     private var currentEditTimerDialog: EditTimerDialog? = null
 
     private val selectionBackCallback = object : OnBackPressedCallback(false) {
@@ -81,14 +84,19 @@ class TimerFragment : Fragment() {
             ClockTheme {
                 TimerScreen(
                     timers = rows,
+                    pendingResetIds = pendingResets.keys.toSet(),
                     selectedIds = selectedIds,
                     timerIdToScrollTo = timerIdToScrollTo,
                     animatePlacement = animatePlacement,
                     onAdd = ::addTimer,
                     onClick = ::onTimerClick,
                     onLongClick = ::toggleSelection,
-                    onToggle = ::toggleTimer,
-                    onReset = ::resetTimer,
+                    onToggle = { timer ->
+                        if (view === this@apply) toggleTimer(timer)
+                    },
+                    onReset = { id ->
+                        if (view === this@apply) resetTimer(id)
+                    },
                     onMove = ::moveTimer,
                     onDelete = ::deleteSelectedTimers,
                     onClearSelection = ::clearSelection,
@@ -116,6 +124,7 @@ class TimerFragment : Fragment() {
 
     override fun onDestroyView() {
         clearSelection()
+        pendingResets.clear()
         timers = emptyList()
         rows = null
         super.onDestroyView()
@@ -149,6 +158,12 @@ class TimerFragment : Fragment() {
                     pendingDeletes.retainAll(loadedTimers.mapNotNull { it.id }.toSet())
                 }
                 val availableTimers = loadedTimers.filter { it.id != null && it.id !in pendingDeletes }
+                pendingResets.keys.toList().forEach { id ->
+                    val timer = availableTimers.firstOrNull { it.id == id }
+                    if (timer == null || timer.state is TimerState.Idle) {
+                        pendingResets.remove(id)?.cancel()
+                    }
+                }
                 val config = activity.config
                 val sortedTimers = when (config.timerSort) {
                     SORT_BY_TIMER_DURATION -> availableTimers.sortedBy { it.seconds }
@@ -249,14 +264,22 @@ class TimerFragment : Fragment() {
         publishTimers(reordered)
     }
 
-    private fun toggleTimer(id: Int) {
+    private fun toggleTimer(row: TimerListItem) {
+        val id = row.id
+        if (id in pendingResets) return
         val activity = activity as? SimpleActivity ?: return
         val owner = viewLifecycleOwnerLiveData.value ?: return
         activity.handleNotificationPermission { granted ->
             if (owner.lifecycle.currentState == Lifecycle.State.DESTROYED) return@handleNotificationPermission
+            if (id in pendingResets) return@handleNotificationPermission
             if (granted) {
                 val timer = timers.firstOrNull { it.id == id } ?: return@handleNotificationPermission
-                val event = when (val state = timer.state) {
+                val state = timer.state
+                // A click from an older row must not invoke the action shown by a newer row.
+                if (row.running != (state is TimerState.Running) || row.paused != (state is TimerState.Paused)) {
+                    return@handleNotificationPermission
+                }
+                val event = when (state) {
                     is TimerState.Idle, is TimerState.Finished -> TimerEvent.Start(id, timer.seconds.secondsToMillis)
                     is TimerState.Paused -> TimerEvent.Start(id, state.tick)
                     is TimerState.Running -> TimerEvent.Pause(id, state.tick)
@@ -273,7 +296,19 @@ class TimerFragment : Fragment() {
     }
 
     private fun resetTimer(id: Int) {
+        if (id in pendingResets) return
         val activity = activity as? SimpleActivity ?: return
+        val owner = viewLifecycleOwnerLiveData.value ?: return
+        if (owner.lifecycle.currentState == Lifecycle.State.DESTROYED) return
+        val timer = timers.firstOrNull { it.id == id } ?: return
+        if (timer.state is TimerState.Idle) return
+
+        // Claim the row before posting, since the Room refresh arrives asynchronously.
+        pendingResets[id] = owner.lifecycleScope.launch {
+            delay(2_000)
+            pendingResets.remove(id)
+            refreshTimers()
+        }
         EventBus.getDefault().post(TimerEvent.Reset(id))
         activity.hideTimerNotification(id)
     }

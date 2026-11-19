@@ -74,13 +74,14 @@ internal data class TimerListItem(
 @Composable
 internal fun TimerScreen(
     timers: List<TimerListItem>?,
+    pendingResetIds: Set<Int>,
     selectedIds: Set<Int>,
     timerIdToScrollTo: Int?,
     animatePlacement: Boolean,
     onAdd: () -> Unit,
     onClick: (Int) -> Unit,
     onLongClick: (Int) -> Unit,
-    onToggle: (Int) -> Unit,
+    onToggle: (TimerListItem) -> Unit,
     onReset: (Int) -> Unit,
     onMove: (Int, Int) -> Unit,
     onDelete: () -> Unit,
@@ -154,9 +155,10 @@ internal fun TimerScreen(
                                     selected = timer.id in selectedIds,
                                     selecting = selecting,
                                     isDragging = isDragging,
+                                    controlsEnabled = timer.id !in pendingResetIds,
                                     onClick = { onClick(timer.id) },
                                     onLongClick = { onLongClick(timer.id) },
-                                    onToggle = { onToggle(timer.id) },
+                                    onToggle = { onToggle(timer) },
                                     onReset = { onReset(timer.id) },
                                     dragHandle = {
                                         val actions = buildList {
@@ -223,6 +225,7 @@ private fun TimerRow(
     selected: Boolean,
     selecting: Boolean,
     isDragging: Boolean,
+    controlsEnabled: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggle: () -> Unit,
@@ -269,13 +272,14 @@ private fun TimerRow(
                 val resetDescription = stringResource(R.string.stopwatch_reset)
                 Surface(
                     onClick = onReset,
+                    enabled = controlsEnabled,
                     modifier = Modifier.size(48.dp).semantics {
                         contentDescription = resetDescription
                         role = Role.Button
                     },
                     shape = MaterialTheme.shapes.medium,
                     color = if (active) colors.surface else colors.surfaceContainerHigh,
-                    contentColor = colors.onSurface,
+                    contentColor = if (controlsEnabled) colors.onSurface else colors.onSurface.copy(alpha = 0.38f),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -286,14 +290,14 @@ private fun TimerRow(
                     }
                 }
             }
-            TimerPlayPause(timer, onToggle)
+            TimerPlayPause(timer, controlsEnabled, onToggle)
             if (selecting) dragHandle()
         }
     }
 }
 
 @Composable
-private fun TimerPlayPause(timer: TimerListItem, onToggle: () -> Unit) {
+private fun TimerPlayPause(timer: TimerListItem, enabled: Boolean, onToggle: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val active = timer.running || timer.paused
     val toggleDescription = stringResource(
@@ -324,13 +328,14 @@ private fun TimerPlayPause(timer: TimerListItem, onToggle: () -> Unit) {
         }
         Surface(
             onClick = onToggle,
+            enabled = enabled,
             modifier = Modifier.size(48.dp).semantics {
                 contentDescription = toggleDescription
                 role = Role.Button
             },
             shape = if (timer.running) MaterialTheme.shapes.large else CircleShape,
-            color = colors.primary,
-            contentColor = colors.onPrimary,
+            color = if (enabled) colors.primary else colors.onSurface.copy(alpha = 0.12f),
+            contentColor = if (enabled) colors.onPrimary else colors.onSurface.copy(alpha = 0.38f),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
