@@ -48,7 +48,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Compose pager host — replace the temporary RtlViewPager and shell XML with Foundation HorizontalPager and lifecycle-aware AndroidFragment hosts for the now-Compose tab content. Preserve RTL swipes, fragment controllers, selected-page persistence, deep links, shortcuts and cross-tab callbacks.
 - [x] Ringing alarm — `AlarmActivity.kt` and `activity_alarm.xml`. Feature the alarm label and time, with spring-return drag feedback and TalkBack-accessible snooze/dismiss actions. Preserve lock-screen flags, thresholds, haptics and exactly-once dispatch.
 - [x] Snooze reminder — `SnoozeReminderActivity.kt` and shared duration dialog call sites in AlarmActivity and SettingsActivity. Use grouped duration choices with the original range and timing.
-- [ ] Alarm intent selector — `SelectAlarmDialog.kt` and `IntentHandlerActivity.kt` UI call site. Preserve dismiss alarm matching, selection and finish behavior.
+- [~] Alarm intent selector — `SelectAlarmDialog.kt` and `IntentHandlerActivity.kt` UI call site. Preserve dismiss alarm matching, selection and finish behavior.
 - [ ] Export form — `ExportDataDialog.kt`. Preserve default path, filename validation, scopes and completion contract.
 - [ ] Typography preference parity — feed the existing Fossify system, monospace, and imported-font choices into both standard and emphasized Compose typography without changing font storage or Commons customization.
 - [ ] Settings — `SettingsActivity.kt` and `activity_settings.xml`. Use visually grouped appearance, clock, reminders, widget and data rows with existing resources, preference values and conditional availability.
