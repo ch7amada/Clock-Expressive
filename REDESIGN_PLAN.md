@@ -13,6 +13,7 @@ Initial audit on 2026-11-19 found no root `user_requests/` directory. Recheck be
 - Give each surface a clear focal point and keep contextual actions near their content. Preserve swipe and selection where currently available. In landscape, let readouts and their associated actions or lists sit alongside each other when width permits.
 
 ## Dependency Versions & Design Token Mappings
+- Current build uses stable Compose BOM `2026.09.00` (UI and runtime `1.12.1`) with Material 3 explicitly pinned to the approved `1.5.0-beta02`. Its AAR requires compile SDK 37.0. Minimum SDK 26 and target SDK 36 retain their existing values.
 
 - AndroidX release notes dated November 18 list `androidx.compose.material3:material3:1.6.0-alpha01` as the newest alpha. Override the Material 3 version explicitly alongside the documented Compose BOM `2026.11.01`, which documents Compose UI 1.13.0. Verify resolved Material 3 and runtime versions together with `dependencyInsight` before adoption. Google Maven currently returns HTTP 404 for both the announced BOM and Material 3 alpha. The visible Maven metadata ends at alpha BOM 2026.11.00 and Material 3 1.5.0-rc01. Keep the target pin pending publication verification. [Release notes](https://developer.android.com/jetpack/androidx/releases/compose-material3#1.6.0-alpha01) · [BOM mapping](https://developer.android.com/develop/ui/compose/bom/bom-mapping)
 - Use the Compose compiler plugin aligned with the catalog's Kotlin 2.4.21. Retain current application ID, signing, flavors and target/minimum SDKs. Identify any compile SDK requirement from AAR metadata once resolution works.
@@ -28,7 +29,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 
 ## Checklist of Atomic Tasks
 
-- [~] Compose foundation — catalog, root/module Gradle, and new `ui/theme/ClockTheme.kt`. Pin approved Material 3 1.5.0-beta02 and verify Compose and Views build together.
+- [x] Compose foundation — catalog, root/module Gradle, and new `ui/theme/ClockTheme.kt`. Pin approved Material 3 1.5.0-beta02 and verify Compose and Views build together.
 - [ ] Latest-alpha upgrade — adopt Material 3 1.6.0-alpha01 and Compose BOM 2026.11.01 when Google Maven serves both, then verify resolved dependencies and component behavior.
 - [ ] Main shell — `MainActivity.kt`, `activity_main.xml`, and `ViewPagerAdapter.kt`. Keep page swipe, starting tab, extras, shortcuts, reselection, tab-specific sort menu and sound results. Use compact `ShortNavigationBar` with an inset background and selection indicator, preserving tab labels. Keep Info and Settings reachable.
 - [ ] Alarm time picker — `MyTimePickerDialogDialog.kt`. Use the verified analog and keyboard pickers with existing initialized time, clock format, validation and cancel contract.
@@ -57,3 +58,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Plan commit `e61cbd17` — design system, migration sequence and acceptance criteria.
 - Baseline `4f2b697d` — initial branch audit and plan. Compose foundation awaits publication verification.
 - Baseline verification — `:app:assembleFossDebug` passed with the Android Studio JDK and SDK Platform 36. `:app:testFossDebugUnitTest` reported `NO-SOURCE`. Luna independently reproduced the latest BOM and Material 3 HTTP 404 responses. Foundation remains pending. No device visual verification has been performed.
+- Foundation `f5d4e368` — added Compose alongside View Binding and implemented the shared Expressive theme. Foss debug assembled, AAR metadata validation passed and unit tests reported `NO-SOURCE`. Dependency insight confirmed the Material 3 beta and Compose runtime pins.
