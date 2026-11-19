@@ -123,3 +123,11 @@ The user found the Compose migration visually improved but too close to standard
 - Ringing visual pass `7a453b66` — verified MaterialShapes Cookie9Sided-to-circle motion, connected actions, spring return and compact type on API 37. Foss debug and lint passed.
 - Editor visual pass `9faf2d5f` — verified both initialized picker routes, cancellation, and pinned connected actions with large type and the landscape keyboard. Foss debug and lint passed.
 - Settings visual pass `310ecabb` — verified both customization routes, preferences and choices, and 320 dp at 200% type in light and dark on API 37. Foss debug and lint passed.
+
+## Alarm density, appearance and launcher widgets
+
+The latest screenshot shows a large upcoming-alarm banner above a much smaller second card. Match card density and switch alignment across alarms. Give every enabled alarm the existing upcoming color treatment, with a restrained next-occurrence marker. Increase floating action buttons where space allows.
+
+- [~] Replace the Fossify appearance routes with Clock-owned System, Dark and Light modes and a System palette or curated colors. Remove the Settings widget customization route. Investigate the reported crash and verify changes on device.
+- [ ] Balance Alarm cards and increase floating action button sizes while preserving compact layouts and callbacks.
+- [ ] Redesign the hosted digital and analogue widgets with original, expressive shapes inspired by Google Clock. Preserve launcher time and widget compatibility.
