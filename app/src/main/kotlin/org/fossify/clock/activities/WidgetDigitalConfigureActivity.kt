@@ -2,162 +2,106 @@ package org.fossify.clock.activities
 
 import android.appwidget.AppWidgetManager
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.widget.SeekBar
-import org.fossify.clock.databinding.WidgetConfigDigitalBinding
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import org.fossify.clock.extensions.config
-import org.fossify.clock.helpers.FORMAT_12H
-import org.fossify.clock.helpers.FORMAT_24H
 import org.fossify.clock.helpers.MyDigitalTimeWidgetProvider
 import org.fossify.clock.helpers.SIMPLE_PHONE
-import org.fossify.commons.dialogs.ColorPickerDialog
+import org.fossify.clock.ui.theme.ClockTheme
+import org.fossify.clock.ui.widget.DigitalWidgetPreview
+import org.fossify.clock.ui.widget.WidgetAppearanceScreen
 import org.fossify.commons.extensions.adjustAlpha
-import org.fossify.commons.extensions.applyColorFilter
-import org.fossify.commons.extensions.getContrastColor
-import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.isDynamicTheme
-import org.fossify.commons.extensions.setFillWithStroke
-import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.IS_CUSTOMIZING_COLORS
+import org.fossify.commons.R as CommonsR
 
 class WidgetDigitalConfigureActivity : SimpleActivity() {
-    private var mBgAlpha = 0f
-    private var mWidgetId = 0
-    private var mBgColor = 0
-    private var mTextColor = 0
-    private var mBgColorWithoutTransparency = 0
-    private val binding: WidgetConfigDigitalBinding by viewBinding(WidgetConfigDigitalBinding::inflate)
-
     public override fun onCreate(savedInstanceState: Bundle?) {
         useDynamicTheme = false
         super.onCreate(savedInstanceState)
         setResult(RESULT_CANCELED)
-        setContentView(binding.root)
-        setupEdgeToEdge(padTopSystem = listOf(binding.configDigitalHolder), padBottomSystem = listOf(binding.root))
-        initVariables()
 
-        mWidgetId = intent.extras?.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID)
-            ?: AppWidgetManager.INVALID_APPWIDGET_ID
+        val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+        val storedBackground = config.widgetBgColor
+        val initialBackground = Color.rgb(
+            Color.red(storedBackground),
+            Color.green(storedBackground),
+            Color.blue(storedBackground),
+        )
+        val storedAlpha = Color.alpha(storedBackground) / 255f
+        val initialOpacity = (storedAlpha * 100).toInt()
+        // The previous SeekBar only quantized alpha when its progress changed from zero.
+        val initialAlpha = if (initialOpacity == 0) storedAlpha else initialOpacity / 100f
+        val initialTextColor = resolveTextColor()
 
-        if (!config.wasInitialWidgetSetUp && Build.BRAND.equals(SIMPLE_PHONE, true)) {
-            saveConfig()
+        if (!config.wasInitialWidgetSetUp && Build.BRAND.equals(SIMPLE_PHONE, ignoreCase = true)) {
+            saveConfig(widgetId, initialBackground.adjustAlpha(initialAlpha), initialTextColor)
             config.wasInitialWidgetSetUp = true
             return
         }
 
-        val isCustomizingColors = intent.extras?.getBoolean(IS_CUSTOMIZING_COLORS) == true
-        if (mWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID && !isCustomizingColors) {
+        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID && !intent.getBooleanExtra(IS_CUSTOMIZING_COLORS, false)) {
             finish()
+            return
         }
 
-        binding.configDigitalSave.setOnClickListener { saveConfig() }
-        binding.configDigitalBgColor.setOnClickListener { pickBackgroundColor() }
-        binding.configDigitalTextColor.setOnClickListener { pickTextColor() }
+        val use24HourFormat = config.use24HourFormat
+        setContent {
+            var background by rememberSaveable { mutableIntStateOf(initialBackground) }
+            var alpha by rememberSaveable { mutableFloatStateOf(initialAlpha) }
+            var opacity by rememberSaveable { mutableIntStateOf(initialOpacity) }
+            var textColor by rememberSaveable { mutableIntStateOf(initialTextColor) }
+            val backgroundColor = background.adjustAlpha(alpha)
 
-        val primaryColor = getProperPrimaryColor()
-        binding.configDigitalBgSeekbar.setColors(mTextColor, primaryColor, primaryColor)
-    }
-
-    private fun initVariables() {
-        mBgColor = config.widgetBgColor
-        mBgAlpha = Color.alpha(mBgColor) / 255.toFloat()
-        mBgColorWithoutTransparency = Color.rgb(
-            Color.red(mBgColor), Color.green(mBgColor), Color.blue(mBgColor)
-        )
-
-        binding.configDigitalBgSeekbar.setOnSeekBarChangeListener(bgSeekbarChangeListener)
-        binding.configDigitalBgSeekbar.progress = (mBgAlpha * 100).toInt()
-        updateBackgroundColor()
-
-        mTextColor = config.widgetTextColor
-        if (
-            mTextColor == resources.getColor(org.fossify.commons.R.color.default_widget_text_color)
-            && isDynamicTheme()
-        ) {
-            mTextColor = resources.getColor(org.fossify.commons.R.color.you_primary_color, theme)
+            ClockTheme {
+                WidgetAppearanceScreen(
+                    backgroundColor = backgroundColor,
+                    opaqueBackgroundColor = background,
+                    textColor = textColor,
+                    opacity = opacity,
+                    onBackgroundColorChange = { background = it },
+                    onTextColorChange = { textColor = it },
+                    onOpacityChange = {
+                        if (opacity != it) {
+                            opacity = it
+                            alpha = it / 100f
+                        }
+                    },
+                    onBack = ::finish,
+                    onSave = { saveConfig(widgetId, backgroundColor, textColor) },
+                    preview = { DigitalWidgetPreview(use24HourFormat, textColor) },
+                )
+            }
         }
-
-        updateTextColor()
-
-        val clockFormat = if (config.use24HourFormat) FORMAT_24H else FORMAT_12H
-        binding.configDigitalTime.format24Hour = clockFormat
-        binding.configDigitalTime.format12Hour = clockFormat
     }
 
-    private fun saveConfig() {
-        storeWidgetColors()
-        requestWidgetUpdate()
-
-        Intent().apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mWidgetId)
-            setResult(RESULT_OK, this)
+    private fun resolveTextColor(): Int {
+        val textColor = config.widgetTextColor
+        return if (textColor == getColor(CommonsR.color.default_widget_text_color) && isDynamicTheme()) {
+            getColor(CommonsR.color.you_primary_color)
+        } else {
+            textColor
         }
-        finish()
     }
 
-    private fun storeWidgetColors() {
+    private fun saveConfig(widgetId: Int, backgroundColor: Int, textColor: Int) {
         config.apply {
-            widgetBgColor = mBgColor
-            widgetTextColor = mTextColor
-        }
-    }
-
-    private fun pickBackgroundColor() {
-        ColorPickerDialog(this, mBgColorWithoutTransparency) { wasPositivePressed, color ->
-            if (wasPositivePressed) {
-                mBgColorWithoutTransparency = color
-                updateBackgroundColor()
-            }
-        }
-    }
-
-    private fun pickTextColor() {
-        ColorPickerDialog(this, mTextColor) { wasPositivePressed, color ->
-            if (wasPositivePressed) {
-                mTextColor = color
-                updateTextColor()
-            }
-        }
-    }
-
-    private fun requestWidgetUpdate() {
-        Intent(
-            AppWidgetManager.ACTION_APPWIDGET_UPDATE,
-            null,
-            this,
-            MyDigitalTimeWidgetProvider::class.java
-        ).apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(mWidgetId))
-            sendBroadcast(this)
-        }
-    }
-
-    private fun updateTextColor() {
-        binding.configDigitalTextColor.setFillWithStroke(mTextColor, mTextColor)
-        binding.configDigitalTime.setTextColor(mTextColor)
-        binding.configDigitalDate.setTextColor(mTextColor)
-        binding.configDigitalSave.setTextColor(getProperPrimaryColor().getContrastColor())
-    }
-
-    private fun updateBackgroundColor() {
-        mBgColor = mBgColorWithoutTransparency.adjustAlpha(mBgAlpha)
-        binding.configDigitalBgColor.setFillWithStroke(mBgColor, mBgColor)
-        binding.configDigitalBackground.applyColorFilter(mBgColor)
-        binding.configDigitalSave.backgroundTintList =
-            ColorStateList.valueOf(getProperPrimaryColor())
-    }
-
-    private val bgSeekbarChangeListener = object : SeekBar.OnSeekBarChangeListener {
-        override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-            mBgAlpha = progress.toFloat() / 100.toFloat()
-            updateBackgroundColor()
+            widgetBgColor = backgroundColor
+            widgetTextColor = textColor
         }
 
-        override fun onStartTrackingTouch(seekBar: SeekBar) {}
+        val update = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE, null, this, MyDigitalTimeWidgetProvider::class.java)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(widgetId))
+        sendBroadcast(update)
 
-        override fun onStopTrackingTouch(seekBar: SeekBar) {}
+        setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
+        finish()
     }
 }
