@@ -60,6 +60,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Shared Fossify UI audit and follow-through — audit dependency-owned About, appearance customization, and color picker boundaries. Preserve suite-wide functionality and document any retained upstream View content.
 - [x] Timer reset interaction guard — keep controls from submitting Pause against a stale Running row while a user-initiated Reset is awaiting its state refresh.
 - [~] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
+- [~] Final Compose lint corrections — guard Android 13 language settings, observe configuration locale in the timer duration picker, and simplify alarm time picker constraint measurement.
 
 ## Platform and Fossify Commons surfaces
 
@@ -98,3 +99,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Permission and alarm prompts `333d720e` — verified first-use warning confirmation/cancel through list and editor, and denied notification permission actions through the timer intent on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Switch appearance `3d35190d` — verified Alarm and Settings checked-thumb preference refresh in live activities, accessibility nodes and unchanged toggle writes. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Timer reset guard `6edb309f` — verified immediate Reset/Pause/duplicate Reset, recovery to Idle, one-shot removal and valid Start/Pause/Resume actions on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
+- Legacy cleanup `2c87c0f2` — removed unused app-owned views and layout dependencies. Both debug APKs assembled, unit-test tasks were NO-SOURCE, and final device smoke preserved the existing database fixture. Final lint found three presentation diagnostics requiring correction.
