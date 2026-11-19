@@ -32,7 +32,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Compose foundation — catalog, root/module Gradle, and new `ui/theme/ClockTheme.kt`. Pin approved Material 3 1.5.0-beta02 and verify Compose and Views build together.
 - [ ] Latest-alpha upgrade — adopt Material 3 1.6.0-alpha01 and Compose BOM 2026.11.01 when Google Maven serves both, then verify resolved dependencies and component behavior.
 - [x] Main shell — `MainActivity.kt`, `activity_main.xml`, and `ViewPagerAdapter.kt`. Keep page swipe, starting tab, extras, shortcuts, reselection, tab-specific sort menu and sound results. Use compact `ShortNavigationBar` with an inset background and selection indicator, preserving tab labels. Keep Info and Settings reachable.
-- [ ] Alarm time picker — `EditAlarmDialog.kt` and a new Compose time picker host. Replace both existing theme-dependent picker paths, preserving initialized hour/minute, clock format, validation and cancel contract.
+- [~] Alarm time picker — `EditAlarmDialog.kt` and a new Compose time picker host. Replace both existing theme-dependent picker paths, preserving initialized hour/minute, clock format, validation and cancel contract.
 - [ ] Alarm editor — `EditAlarmDialog.kt`. Lead with selected time and group weekday toggles, label, sound, vibration and reminder options; retain add/edit/delete and scheduling callbacks.
 - [ ] Alarm sort — `ChangeAlarmSortDialog.kt`. Use tonal radio rows for existing sort choices and direction without changing persisted sort values.
 - [ ] Alarm list — `AlarmFragment.kt` and `AlarmsAdapter.kt`. Group alarm time and recurrence in tonal rows with accessible switches, keep selection, add, edit, bulk actions and permission flows.
