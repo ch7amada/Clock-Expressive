@@ -1,15 +1,25 @@
 package org.fossify.clock.dialogs
 
-import android.graphics.drawable.Drawable
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.media.AudioManager
 import android.media.RingtoneManager
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
-import org.fossify.clock.R
+import android.os.Build
+import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.activity.ComponentDialog
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import org.fossify.clock.activities.SimpleActivity
-import org.fossify.clock.databinding.DialogEditAlarmBinding
 import org.fossify.clock.extensions.checkAlarmsWithDeletedSoundUri
-import org.fossify.clock.extensions.colorCompoundDrawable
 import org.fossify.clock.extensions.config
 import org.fossify.clock.extensions.dbHelper
 import org.fossify.clock.extensions.getFormattedTime
@@ -19,21 +29,15 @@ import org.fossify.clock.helpers.PICK_AUDIO_FILE_INTENT_ID
 import org.fossify.clock.helpers.getCurrentDayMinutes
 import org.fossify.clock.helpers.updateNonRecurringAlarmDay
 import org.fossify.clock.models.Alarm
+import org.fossify.clock.ui.dialogs.AlarmEditorContent
 import org.fossify.clock.ui.dialogs.showAlarmTimePicker
+import org.fossify.clock.ui.theme.ClockTheme
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.SelectAlarmSoundDialog
-import org.fossify.commons.extensions.addBit
-import org.fossify.commons.extensions.applyColorFilter
-import org.fossify.commons.extensions.beVisibleIf
-import org.fossify.commons.extensions.getAlertDialogBuilder
 import org.fossify.commons.extensions.getDefaultAlarmSound
-import org.fossify.commons.extensions.getProperBackgroundColor
-import org.fossify.commons.extensions.getProperTextColor
-import org.fossify.commons.extensions.removeBit
-import org.fossify.commons.extensions.setupDialogStuff
 import org.fossify.commons.extensions.toast
-import org.fossify.commons.extensions.value
 import org.fossify.commons.models.AlarmSound
+import org.fossify.commons.R as CommonsR
 
 class EditAlarmDialog(
     val activity: SimpleActivity,
@@ -41,142 +45,82 @@ class EditAlarmDialog(
     val onDismiss: () -> Unit = {},
     val callback: (alarmId: Int) -> Unit,
 ) {
-    private val binding = DialogEditAlarmBinding.inflate(activity.layoutInflater)
-    private val textColor = activity.getProperTextColor()
-
     init {
         restoreLastAlarm()
-        updateAlarmTime()
+    }
 
-        binding.apply {
-            editAlarmTime.setOnClickListener {
-                showAlarmTimePicker(
-                    activity = activity,
-                    initialHour = alarm.timeInMinutes / 60,
-                    initialMinute = alarm.timeInMinutes % 60,
-                    is24Hour = activity.config.use24HourFormat,
-                    onTimePicked = ::timePicked,
-                )
-            }
+    private val dialog = ComponentDialog(activity, android.R.style.Theme_DeviceDefault_NoActionBar)
+    private val label = TextFieldState(initialText = alarm.label)
+    private var timeInMinutes by mutableIntStateOf(alarm.timeInMinutes)
+    private var days by mutableIntStateOf(alarm.days)
+    private var vibrate by mutableStateOf(alarm.vibrate)
+    private var soundTitle by mutableStateOf(alarm.soundTitle)
 
-            editAlarmSound.colorCompoundDrawable(textColor)
-            editAlarmSound.text = alarm.soundTitle
-            editAlarmSound.setOnClickListener {
-                SelectAlarmSoundDialog(
-                    activity = activity,
-                    currentUri = alarm.soundUri,
-                    audioStream = AudioManager.STREAM_ALARM,
-                    pickAudioIntentId = PICK_AUDIO_FILE_INTENT_ID,
-                    type = RingtoneManager.TYPE_ALARM,
-                    loopAudio = true,
-                    onAlarmPicked = {
-                        if (it != null) {
-                            updateSelectedAlarmSound(it)
-                        }
-                    },
-                    onAlarmSoundDeleted = {
-                        if (alarm.soundUri == it.uri) {
-                            val defaultAlarm =
-                                root.context.getDefaultAlarmSound(RingtoneManager.TYPE_ALARM)
-                            updateSelectedAlarmSound(defaultAlarm)
-                        }
-                        activity.checkAlarmsWithDeletedSoundUri(it.uri)
-                    })
-            }
-
-            editAlarmVibrateIcon.setColorFilter(textColor)
-            editAlarmVibrate.isChecked = alarm.vibrate
-            editAlarmVibrateHolder.setOnClickListener {
-                editAlarmVibrate.toggle()
-                alarm.vibrate = editAlarmVibrate.isChecked
-            }
-
-            editAlarmLabelImage.applyColorFilter(textColor)
-            editAlarm.setText(alarm.label)
-
-            val dayLetters =activity.resources.getStringArray(org.fossify.commons.R.array.week_day_letters)
-            val dayIndexes = activity.rotateWeekdays(arrayListOf(0, 1, 2, 3, 4, 5, 6))
-
-            dayIndexes.forEach {
-                val bitmask = 1 shl it
-                val day = activity.layoutInflater.inflate(
-                    R.layout.alarm_day, editAlarmDaysHolder, false
-                ) as TextView
-                day.text = dayLetters[it]
-
-                val isDayChecked = alarm.isRecurring() && alarm.days and bitmask != 0
-                day.background = getProperDayDrawable(isDayChecked)
-
-                day.setTextColor(if (isDayChecked) root.context.getProperBackgroundColor() else textColor)
-                day.setOnClickListener {
-                    if (!alarm.isRecurring()) {
-                        alarm.days = 0
-                    }
-
-                    val selectDay = alarm.days and bitmask == 0
-                    if (selectDay) {
-                        alarm.days = alarm.days.addBit(bitmask)
-                    } else {
-                        alarm.days = alarm.days.removeBit(bitmask)
-                    }
-                    day.background = getProperDayDrawable(selectDay)
-                    day.setTextColor(if (selectDay) root.context.getProperBackgroundColor() else textColor)
-                    checkDaylessAlarm()
-                }
-
-                editAlarmDaysHolder.addView(day)
+    init {
+        val dayIndexes = activity.rotateWeekdays(arrayListOf(0, 1, 2, 3, 4, 5, 6))
+        val dismissOnDestroy = object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                dialog.dismiss()
             }
         }
-
-        activity.getAlertDialogBuilder()
-            .setOnDismissListener { onDismiss() }
-            .setPositiveButton(org.fossify.commons.R.string.ok, null)
-            .setNegativeButton(org.fossify.commons.R.string.cancel, null)
-            .apply {
-                activity.setupDialogStuff(binding.root, this) { alertDialog ->
-                    alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                        if (!activity.config.wasAlarmWarningShown) {
-                            ConfirmationDialog(
-                                activity = activity,
-                                messageId = org.fossify.commons.R.string.alarm_warning,
-                                positive = org.fossify.commons.R.string.ok,
-                                negative = 0
-                            ) {
-                                activity.config.wasAlarmWarningShown = true
-                                it.performClick()
-                            }
-
-                            return@setOnClickListener
-                        }
-
-                        updateNonRecurringAlarmDay(alarm)
-
-                        alarm.label = binding.editAlarm.value
-                        alarm.isEnabled = true
-                        alarm.oneShot = false
-
-                        var alarmId = alarm.id
-                        activity.handleFullScreenNotificationsPermission { granted ->
-                            if (granted) {
-                                if (alarm.id == 0) {
-                                    alarmId = activity.dbHelper.insertAlarm(alarm)
-                                    if (alarmId == -1) {
-                                        activity.toast(org.fossify.commons.R.string.unknown_error_occurred)
-                                    }
-                                } else {
-                                    if (!activity.dbHelper.updateAlarm(alarm)) {
-                                        activity.toast(org.fossify.commons.R.string.unknown_error_occurred)
-                                    }
-                                }
-
-                                activity.config.alarmLastConfig = alarm
-                                callback(alarmId)
-                                alertDialog.dismiss()
-                            }
-                        }
-                    }
+        activity.lifecycle.addObserver(dismissOnDestroy)
+        dialog.setOnDismissListener {
+            activity.lifecycle.removeObserver(dismissOnDestroy)
+            onDismiss()
+        }
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            WindowCompat.setDecorFitsSystemWindows(this, false)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setDimAmount(0.32f)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                attributes = attributes.apply { setFitInsetsTypes(0) }
+            }
+            @Suppress("DEPRECATION")
+            setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                    } else {
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                    },
+            )
+        }
+        dialog.setContentView(ComposeView(dialog.context).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                ClockTheme {
+                    AlarmEditorContent(
+                        time = activity.getFormattedTime(
+                            passedSeconds = timeInMinutes * 60,
+                            showSeconds = false,
+                            makeAmPmSmaller = false,
+                        ).toString(),
+                        daylessLabel = if (days <= 0) {
+                            if (timeInMinutes > getCurrentDayMinutes()) CommonsR.string.today else CommonsR.string.tomorrow
+                        } else {
+                            null
+                        },
+                        dayIndexes = dayIndexes,
+                        days = days,
+                        label = label,
+                        soundTitle = soundTitle,
+                        vibrate = vibrate,
+                        onTimeClick = ::openTimePicker,
+                        onDayClick = ::toggleDay,
+                        onSoundClick = ::openSoundPicker,
+                        onVibrateChange = {
+                            alarm.vibrate = it
+                            vibrate = it
+                        },
+                        onCancel = dialog::dismiss,
+                        onConfirm = ::saveAlarm,
+                    )
                 }
             }
+        })
+        dialog.show()
+        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
     }
 
     private fun restoreLastAlarm() {
@@ -192,48 +136,87 @@ class EditAlarmDialog(
         }
     }
 
-    private fun timePicked(hours: Int, minutes: Int) {
-        alarm.timeInMinutes = hours * 60 + minutes
-        updateAlarmTime()
-    }
-
-    private fun updateAlarmTime() {
-        binding.editAlarmTime.text = activity.getFormattedTime(
-            passedSeconds = alarm.timeInMinutes * 60,
-            showSeconds = false,
-            makeAmPmSmaller = true
+    private fun openTimePicker() {
+        showAlarmTimePicker(
+            activity = activity,
+            initialHour = timeInMinutes / 60,
+            initialMinute = timeInMinutes % 60,
+            is24Hour = activity.config.use24HourFormat,
+            onTimePicked = { hours, minutes ->
+                alarm.timeInMinutes = hours * 60 + minutes
+                timeInMinutes = alarm.timeInMinutes
+            },
         )
-        checkDaylessAlarm()
     }
 
-    private fun checkDaylessAlarm() {
-        if (!alarm.isRecurring()) {
-            val textId = if (alarm.timeInMinutes > getCurrentDayMinutes()) {
-                org.fossify.commons.R.string.today
-            } else {
-                org.fossify.commons.R.string.tomorrow
+    private fun toggleDay(dayIndex: Int) {
+        val selectedDays = if (alarm.isRecurring()) alarm.days else 0
+        alarm.days = selectedDays xor (1 shl dayIndex)
+        days = alarm.days
+    }
+
+    private fun openSoundPicker() {
+        SelectAlarmSoundDialog(
+            activity = activity,
+            currentUri = alarm.soundUri,
+            audioStream = AudioManager.STREAM_ALARM,
+            pickAudioIntentId = PICK_AUDIO_FILE_INTENT_ID,
+            type = RingtoneManager.TYPE_ALARM,
+            loopAudio = true,
+            onAlarmPicked = { if (it != null) updateSelectedAlarmSound(it) },
+            onAlarmSoundDeleted = {
+                if (alarm.soundUri == it.uri) {
+                    updateSelectedAlarmSound(activity.getDefaultAlarmSound(RingtoneManager.TYPE_ALARM))
+                }
+                activity.checkAlarmsWithDeletedSoundUri(it.uri)
+            },
+        )
+    }
+
+    private fun saveAlarm() {
+        if (!dialog.isShowing) return
+
+        if (!activity.config.wasAlarmWarningShown) {
+            ConfirmationDialog(
+                activity = activity,
+                messageId = CommonsR.string.alarm_warning,
+                positive = CommonsR.string.ok,
+                negative = 0,
+            ) {
+                activity.config.wasAlarmWarningShown = true
+                saveAlarm()
             }
-
-            binding.editAlarmDaylessLabel.text = "(${activity.getString(textId)})"
-        }
-        binding.editAlarmDaylessLabel.beVisibleIf(!alarm.isRecurring())
-    }
-
-    private fun getProperDayDrawable(selected: Boolean): Drawable {
-        val drawableId = if (selected) {
-            R.drawable.circle_background_filled
-        } else {
-            R.drawable.circle_background_stroke
+            return
         }
 
-        val drawable = activity.resources.getDrawable(drawableId)
-        drawable.applyColorFilter(textColor)
-        return drawable
+        updateNonRecurringAlarmDay(alarm)
+        days = alarm.days
+        alarm.label = label.text.toString().trim()
+        alarm.isEnabled = true
+        alarm.oneShot = false
+
+        var alarmId = alarm.id
+        activity.handleFullScreenNotificationsPermission { granted ->
+            if (granted && dialog.isShowing) {
+                if (alarm.id == 0) {
+                    alarmId = activity.dbHelper.insertAlarm(alarm)
+                    if (alarmId == -1) {
+                        activity.toast(CommonsR.string.unknown_error_occurred)
+                    }
+                } else if (!activity.dbHelper.updateAlarm(alarm)) {
+                    activity.toast(CommonsR.string.unknown_error_occurred)
+                }
+
+                activity.config.alarmLastConfig = alarm
+                callback(alarmId)
+                dialog.dismiss()
+            }
+        }
     }
 
     fun updateSelectedAlarmSound(alarmSound: AlarmSound) {
         alarm.soundTitle = alarmSound.title
         alarm.soundUri = alarmSound.uri
-        binding.editAlarmSound.text = alarmSound.title
+        soundTitle = alarmSound.title
     }
 }
