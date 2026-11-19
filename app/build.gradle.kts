@@ -65,7 +65,6 @@ android {
 
     buildFeatures {
         compose = true
-        viewBinding = true
         buildConfig = true
     }
 
@@ -154,11 +153,7 @@ dependencies {
 
     implementation(libs.bundles.lifecycle)
     implementation(libs.androidx.lifecycle.runtimeCompose)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.preference)
     implementation(libs.kotlinx.coroutines)
-    implementation(libs.numberpicker)
-    implementation(libs.autofittextview)
     implementation(libs.eventbus)
     implementation(libs.kotlinx.serialization.json)
 

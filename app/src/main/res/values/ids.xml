@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="alarms_list" type="id" />
+    <item name="clock_fragment" type="id" />
+    <item name="stopwatch_fragment" type="id" />
+    <item name="timers_list" type="id" />
+</resources>
