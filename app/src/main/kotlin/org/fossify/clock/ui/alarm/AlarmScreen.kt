@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -48,7 +47,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.fossify.clock.R
-import java.text.NumberFormat
+import org.fossify.clock.ui.components.SelectionBar
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import org.fossify.commons.R as CommonsR
@@ -181,43 +180,6 @@ internal fun AlarmScreen(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SelectionBar(
-    count: Int,
-    onClose: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onClose) {
-                Icon(
-                    painterResource(CommonsR.drawable.ic_cross_vector),
-                    contentDescription = stringResource(CommonsR.string.close),
-                )
-            }
-            Text(
-                text = "${stringResource(CommonsR.string.items_selected)}: ${NumberFormat.getIntegerInstance().format(count)}",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            IconButton(onClick = onDelete) {
-                Icon(
-                    painterResource(CommonsR.drawable.ic_delete_vector),
-                    contentDescription = stringResource(CommonsR.string.delete),
-                )
             }
         }
     }

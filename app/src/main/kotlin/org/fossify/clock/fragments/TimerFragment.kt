@@ -1,45 +1,64 @@
 package org.fossify.clock.fragments
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.fossify.clock.R
 import org.fossify.clock.activities.SimpleActivity
-import org.fossify.clock.adapters.TimerAdapter
-import org.fossify.clock.databinding.FragmentTimerBinding
 import org.fossify.clock.dialogs.ChangeTimerSortDialog
 import org.fossify.clock.dialogs.EditTimerDialog
 import org.fossify.clock.extensions.config
 import org.fossify.clock.extensions.createNewTimer
+import org.fossify.clock.extensions.getFormattedDuration
+import org.fossify.clock.extensions.hideTimerNotification
+import org.fossify.clock.extensions.secondsToMillis
 import org.fossify.clock.extensions.timerHelper
-import org.fossify.clock.helpers.DisabledItemChangeAnimator
+import org.fossify.clock.helpers.INVALID_TIMER_ID
 import org.fossify.clock.helpers.SORT_BY_TIMER_DURATION
 import org.fossify.clock.models.Timer
 import org.fossify.clock.models.TimerEvent
-import org.fossify.commons.extensions.beVisibleIf
-import org.fossify.commons.extensions.getProperBackgroundColor
-import org.fossify.commons.extensions.getProperTextColor
+import org.fossify.clock.models.TimerState
+import org.fossify.clock.ui.theme.ClockTheme
+import org.fossify.clock.ui.timer.TimerListItem
+import org.fossify.clock.ui.timer.TimerScreen
+import org.fossify.commons.dialogs.PermissionRequiredDialog
+import org.fossify.commons.extensions.getFormattedDuration
 import org.fossify.commons.extensions.hideKeyboard
-import org.fossify.commons.extensions.updateTextColors
+import org.fossify.commons.extensions.openNotificationSettings
 import org.fossify.commons.helpers.SORT_BY_CUSTOM
 import org.fossify.commons.helpers.SORT_BY_DATE_CREATED
 import org.fossify.commons.models.AlarmSound
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import org.fossify.commons.R as CommonsR
 
 class TimerFragment : Fragment() {
-    companion object {
-        private const val INVALID_POSITION = -1
-    }
+    private var timers = emptyList<Timer>()
+    private var rows by mutableStateOf<List<TimerListItem>?>(null)
+    private var selectedIds by mutableStateOf(emptySet<Int>())
+    private var timerIdToScrollTo by mutableStateOf<Int?>(null)
+    private var animatePlacement by mutableStateOf(true)
+    private var skipNextPlacementAnimation = false
+    private var refreshRequest = 0L
+    private val pendingDeletes = mutableSetOf<Int>()
+    private var currentEditTimerDialog: EditTimerDialog? = null
 
-    private lateinit var binding: FragmentTimerBinding
-    private lateinit var timerAdapter: TimerAdapter
-    private var timerPositionToScrollTo = INVALID_POSITION
-    private var currentEditAlarmDialog: EditTimerDialog? = null
+    private val selectionBackCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() = updateSelection(emptySet())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,120 +74,224 @@ class TimerFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View {
-        binding = FragmentTimerBinding.inflate(inflater, container, false).apply {
-            timersList.itemAnimator = DisabledItemChangeAnimator()
-            timerAdd.setOnClickListener {
-                activity?.run {
-                    hideKeyboard()
-                    openEditTimer(createNewTimer())
-                }
+    ): View = ComposeView(requireContext()).apply {
+        id = R.id.timers_list
+        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        setContent {
+            ClockTheme {
+                TimerScreen(
+                    timers = rows,
+                    selectedIds = selectedIds,
+                    timerIdToScrollTo = timerIdToScrollTo,
+                    animatePlacement = animatePlacement,
+                    onAdd = ::addTimer,
+                    onClick = ::onTimerClick,
+                    onLongClick = ::toggleSelection,
+                    onToggle = ::toggleTimer,
+                    onReset = ::resetTimer,
+                    onMove = ::moveTimer,
+                    onDelete = ::deleteSelectedTimers,
+                    onClearSelection = { updateSelection(emptySet()) },
+                    onScrollComplete = { id ->
+                        if (timerIdToScrollTo == id) timerIdToScrollTo = null
+                    },
+                )
             }
         }
-
-        initOrUpdateAdapter()
-        refreshTimers()
-
-        // the initial timer is created asynchronously at first launch, make sure we show it once created
-        if (context?.config?.appRunCount == 1) {
-            Handler(Looper.getMainLooper()).postDelayed({
-                refreshTimers()
-            }, 1000)
-        }
-
-        return binding.root
     }
 
-    private fun initOrUpdateAdapter() {
-        if (this::timerAdapter.isInitialized) {
-            timerAdapter.updatePrimaryColor()
-            timerAdapter.updateBackgroundColor(requireContext().getProperBackgroundColor())
-            timerAdapter.updateTextColor(requireContext().getProperTextColor())
-        } else {
-            timerAdapter = TimerAdapter(
-                simpleActivity = requireActivity() as SimpleActivity,
-                recyclerView = binding.timersList,
-                onRefresh = ::refreshTimers,
-                onItemClick = ::openEditTimer
-            )
-            binding.timersList.adapter = timerAdapter
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, selectionBackCallback)
+        refreshTimers()
+
+        // The initial timer is created asynchronously on the first launch.
+        if (requireContext().config.appRunCount == 1) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                delay(1000)
+                refreshTimers()
+            }
         }
+    }
+
+    override fun onDestroyView() {
+        updateSelection(emptySet())
+        timers = emptyList()
+        rows = null
+        super.onDestroyView()
+    }
+
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
+        super.setUserVisibleHint(isVisibleToUser)
+        if (!isVisibleToUser) updateSelection(emptySet())
     }
 
     override fun onResume() {
         super.onResume()
-        requireContext().updateTextColors(binding.root)
-        initOrUpdateAdapter()
         refreshTimers()
     }
 
     fun showSortingDialog() {
-        ChangeTimerSortDialog(activity as SimpleActivity) {
-            refreshTimers(
-                animate = false // disable sorting animations for now.
+        val activity = activity as? SimpleActivity ?: return
+        ChangeTimerSortDialog(activity) {
+            skipNextPlacementAnimation = true
+            refreshTimers()
+        }
+    }
+
+    private fun refreshTimers() {
+        val activity = activity ?: return
+        val owner = viewLifecycleOwnerLiveData.value ?: return
+        val request = ++refreshRequest
+        activity.timerHelper.getTimers { loadedTimers ->
+            activity.runOnUiThread {
+                if (request != refreshRequest || owner.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+                    return@runOnUiThread
+                }
+
+                // A refresh can see timers whose asynchronous delete has not finished.
+                if (pendingDeletes.isNotEmpty()) {
+                    pendingDeletes.retainAll(loadedTimers.mapNotNull { it.id }.toSet())
+                }
+                val availableTimers = loadedTimers.filter { it.id != null && it.id !in pendingDeletes }
+                val config = activity.config
+                val sortedTimers = when (config.timerSort) {
+                    SORT_BY_TIMER_DURATION -> availableTimers.sortedBy { it.seconds }
+                    SORT_BY_DATE_CREATED -> availableTimers.sortedBy { it.id }
+                    SORT_BY_CUSTOM -> {
+                        val order = config.timersCustomSorting.split(", ")
+                            .mapNotNull(String::toIntOrNull)
+                            .distinct()
+                            .withIndex()
+                            .associate { (index, id) -> id to index }
+                        if (order.isEmpty()) {
+                            availableTimers.sortedBy { it.id }
+                        } else {
+                            availableTimers.sortedBy { order[it.id] ?: Int.MAX_VALUE }
+                        }
+                    }
+
+                    else -> availableTimers
+                }
+
+                animatePlacement = !skipNextPlacementAnimation
+                skipNextPlacementAnimation = false
+                publishTimers(sortedTimers)
+                if (selectedIds.isNotEmpty()) {
+                    updateSelection(selectedIds.intersect(availableTimers.mapNotNull { it.id }.toSet()))
+                }
+            }
+        }
+    }
+
+    private fun publishTimers(timers: List<Timer>) {
+        this.timers = timers
+        rows = timers.map { timer ->
+            val time = when (val state = timer.state) {
+                is TimerState.Finished -> 0.getFormattedDuration()
+                is TimerState.Idle -> timer.seconds.getFormattedDuration()
+                is TimerState.Paused -> state.tick.getFormattedDuration()
+                is TimerState.Running -> state.tick.getFormattedDuration()
+            }
+            val progress = when (val state = timer.state) {
+                is TimerState.Running -> remainingProgress(state.tick, state.duration)
+                is TimerState.Paused -> remainingProgress(state.tick, state.duration)
+                is TimerState.Finished -> 0f
+                is TimerState.Idle -> null
+            }
+            TimerListItem(
+                id = checkNotNull(timer.id),
+                time = time,
+                label = timer.label,
+                running = timer.state is TimerState.Running,
+                paused = timer.state is TimerState.Paused,
+                canReset = timer.state !is TimerState.Idle,
+                progress = progress,
             )
         }
     }
 
-    private fun getSortedTimers(callback: (List<Timer>) -> Unit) {
-        activity?.timerHelper?.getTimers { timers ->
-            val safeContext = context ?: return@getTimers
-            val sortedTimers = when (safeContext.config.timerSort) {
-                SORT_BY_TIMER_DURATION -> timers.sortedBy { it.seconds }
-                SORT_BY_DATE_CREATED -> timers.sortedBy { it.id }
-                SORT_BY_CUSTOM -> {
-                    val customTimersSortOrderString = activity?.config?.timersCustomSorting
-                    if (customTimersSortOrderString == "") {
-                        timers.sortedBy { it.id }
-                    } else {
-                        val customTimersSortOrder =
-                            customTimersSortOrderString?.split(", ")?.map { it.toInt() }!!
-                        val timersIdValueMap = timers.associateBy { it.id }
+    private fun remainingProgress(tick: Long, duration: Long): Float? =
+        if (duration > 0) (tick.toDouble() / duration).coerceIn(0.0, 1.0).toFloat() else null
 
-                        val sortedTimers: ArrayList<Timer> = ArrayList()
-                        customTimersSortOrder.map { id ->
-                            if (timersIdValueMap[id] != null) {
-                                sortedTimers.add(timersIdValueMap[id] as Timer)
-                            }
-                        }
+    private fun addTimer() {
+        val activity = activity as? SimpleActivity ?: return
+        activity.hideKeyboard()
+        openEditTimer(activity.createNewTimer())
+    }
 
-                        (sortedTimers + timers.filter { it !in sortedTimers }) as ArrayList<Timer>
-                    }
+    private fun onTimerClick(id: Int) {
+        if (selectedIds.isNotEmpty()) {
+            toggleSelection(id)
+        } else {
+            timers.firstOrNull { it.id == id }?.let { openEditTimer(it.copy()) }
+        }
+    }
+
+    private fun toggleSelection(id: Int) {
+        if (timers.none { it.id == id }) return
+        updateSelection(if (id in selectedIds) selectedIds - id else selectedIds + id)
+    }
+
+    private fun updateSelection(ids: Set<Int>) {
+        selectedIds = ids
+        selectionBackCallback.isEnabled = ids.isNotEmpty()
+    }
+
+    private fun moveTimer(fromId: Int, toId: Int) {
+        val config = context?.config ?: return
+        if (selectedIds.isEmpty() || fromId == toId) return
+        val from = timers.indexOfFirst { it.id == fromId }
+        val to = timers.indexOfFirst { it.id == toId }
+        if (from < 0 || to < 0) return
+
+        val reordered = timers.toMutableList().apply { add(to, removeAt(from)) }
+        config.timersCustomSorting = reordered.joinToString { it.id.toString() }
+        if (config.timerSort != SORT_BY_CUSTOM) config.timerSort = SORT_BY_CUSTOM
+        animatePlacement = true
+        publishTimers(reordered)
+    }
+
+    private fun toggleTimer(id: Int) {
+        val activity = activity as? SimpleActivity ?: return
+        val owner = viewLifecycleOwnerLiveData.value ?: return
+        activity.handleNotificationPermission { granted ->
+            if (owner.lifecycle.currentState == Lifecycle.State.DESTROYED) return@handleNotificationPermission
+            if (granted) {
+                val timer = timers.firstOrNull { it.id == id } ?: return@handleNotificationPermission
+                val event = when (val state = timer.state) {
+                    is TimerState.Idle, is TimerState.Finished -> TimerEvent.Start(id, timer.seconds.secondsToMillis)
+                    is TimerState.Paused -> TimerEvent.Start(id, state.tick)
+                    is TimerState.Running -> TimerEvent.Pause(id, state.tick)
                 }
-
-                else -> timers
-            }
-
-            activity?.runOnUiThread {
-                callback(sortedTimers)
+                EventBus.getDefault().post(event)
+            } else {
+                PermissionRequiredDialog(
+                    activity = activity,
+                    textId = CommonsR.string.allow_notifications_reminders,
+                    positiveActionCallback = { activity.openNotificationSettings() },
+                )
             }
         }
     }
 
-    private fun refreshTimers(animate: Boolean = true) {
-        getSortedTimers { timers ->
-            with(binding.timersList) {
-                val originalAnimator = itemAnimator
-                if (!animate) {
-                    itemAnimator = null
-                }
+    private fun resetTimer(id: Int) {
+        val activity = activity as? SimpleActivity ?: return
+        EventBus.getDefault().post(TimerEvent.Reset(id))
+        activity.hideTimerNotification(id)
+    }
 
-                timerAdapter.submitList(timers.toMutableList()) {
-                    view?.post {
-                        if (timerPositionToScrollTo != INVALID_POSITION &&
-                            timerAdapter.itemCount > timerPositionToScrollTo
-                        ) {
-                            smoothScrollToPosition(timerPositionToScrollTo)
-                            timerPositionToScrollTo = INVALID_POSITION
-                        }
-
-                        if (!animate) {
-                            itemAnimator = originalAnimator
-                        }
-                    }
-                }
-                binding.timersPlaceholder.beVisibleIf(timers.isEmpty())
-            }
+    private fun deleteSelectedTimers() {
+        val activity = activity as? SimpleActivity ?: return
+        val ids = selectedIds
+        if (ids.isEmpty()) return
+        pendingDeletes.addAll(ids)
+        publishTimers(timers.filterNot { it.id in ids })
+        updateSelection(emptySet())
+        ids.forEach { id ->
+            EventBus.getDefault().post(TimerEvent.Delete(id))
+            activity.hideTimerNotification(id)
         }
     }
 
@@ -178,25 +301,18 @@ class TimerFragment : Fragment() {
     }
 
     fun updateAlarmSound(alarmSound: AlarmSound) {
-        currentEditAlarmDialog?.updateAlarmSound(alarmSound)
+        currentEditTimerDialog?.updateAlarmSound(alarmSound)
     }
 
     fun updatePosition(timerId: Int) {
-        getSortedTimers { timers ->
-            val position = timers.indexOfFirst { it.id == timerId }
-            if (position != INVALID_POSITION) {
-                if (timerAdapter.itemCount > position) {
-                    binding.timersList.smoothScrollToPosition(position)
-                } else {
-                    timerPositionToScrollTo = position
-                }
-            }
-        }
+        timerIdToScrollTo = timerId.takeUnless { it == INVALID_TIMER_ID }
+        if (timerIdToScrollTo != null) refreshTimers()
     }
 
     private fun openEditTimer(timer: Timer) {
-        currentEditAlarmDialog = EditTimerDialog(activity as SimpleActivity, timer) {
-            currentEditAlarmDialog = null
+        val activity = activity as? SimpleActivity ?: return
+        currentEditTimerDialog = EditTimerDialog(activity, timer) {
+            currentEditTimerDialog = null
             refreshTimers()
         }
     }

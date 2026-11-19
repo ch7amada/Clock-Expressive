@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,12 +47,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import org.fossify.clock.R
+import org.fossify.clock.ui.components.SelectionBar
 import org.fossify.clock.extensions.getFormattedDate
 import org.fossify.clock.extensions.getFormattedTime
 import org.fossify.clock.helpers.FORMAT_12H_WITH_SECONDS
 import org.fossify.clock.helpers.FORMAT_24H_WITH_SECONDS
 import org.fossify.clock.models.MyTimeZone
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -349,34 +348,6 @@ private fun ZoneRow(
                     label(Modifier.weight(1f))
                     readout(Alignment.End)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SelectionBar(count: Int, onClose: () -> Unit, onDelete: () -> Unit, modifier: Modifier) {
-    val locale = LocalConfiguration.current.locales[0]
-    val countText = remember(count, locale) { NumberFormat.getIntegerInstance(locale).format(count) }
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onClose) {
-                Icon(painterResource(CommonsR.drawable.ic_cross_vector), stringResource(CommonsR.string.close))
-            }
-            Text(
-                text = "${stringResource(CommonsR.string.items_selected)}: $countText",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            IconButton(onClick = onDelete) {
-                Icon(painterResource(CommonsR.drawable.ic_delete_vector), stringResource(CommonsR.string.delete))
             }
         }
     }

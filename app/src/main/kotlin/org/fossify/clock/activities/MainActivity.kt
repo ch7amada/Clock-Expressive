@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.doOnLayout
 import org.fossify.clock.BuildConfig
 import org.fossify.clock.R
 import org.fossify.clock.adapters.ViewPagerAdapter
@@ -377,11 +378,6 @@ class MainActivity : SimpleActivity() {
 
         val tabToOpen = intent.getIntExtra(OPEN_TAB, config.defaultTab)
         intent.removeExtra(OPEN_TAB)
-        if (tabToOpen == TAB_TIMER) {
-            val timerId = intent.getIntExtra(TIMER_ID, INVALID_TIMER_ID)
-            viewPagerAdapter.updateTimerPosition(timerId)
-        }
-
         if (tabToOpen == TAB_STOPWATCH) {
             config.toggleStopwatch = intent.getBooleanExtra(TOGGLE_STOPWATCH, false)
         }
@@ -389,6 +385,10 @@ class MainActivity : SimpleActivity() {
         binding.viewPager.offscreenPageLimit = TABS_COUNT - 1
         binding.viewPager.currentItem = getTabIndex(tabToOpen)
         selectedTab = binding.viewPager.currentItem
+        if (tabToOpen == TAB_TIMER) {
+            val timerId = intent.getIntExtra(TIMER_ID, INVALID_TIMER_ID)
+            binding.viewPager.doOnLayout { viewPagerAdapter.updateTimerPosition(timerId) }
+        }
     }
 
     private enum class MainTab(val label: Int, val outlineIcon: Int, val filledIcon: Int) {
