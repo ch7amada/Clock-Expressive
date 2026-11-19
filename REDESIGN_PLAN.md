@@ -59,8 +59,8 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Alarm switch preference — apply the existing Fossify checked-thumb icon preference to the Compose Alarm list as well as Settings.
 - [x] Shared Fossify UI audit and follow-through — audit dependency-owned About, appearance customization, and color picker boundaries. Preserve suite-wide functionality and document any retained upstream View content.
 - [x] Timer reset interaction guard — keep controls from submitting Pause against a stale Running row while a user-initiated Reset is awaiting its state refresh.
-- [~] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
-- [~] Final Compose lint corrections — guard Android 13 language settings, observe configuration locale in the timer duration picker, and simplify alarm time picker constraint measurement.
+- [x] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
+- [x] Final Compose lint corrections — guard Android 13 language settings, observe configuration locale in the timer duration picker, and simplify alarm time picker constraint measurement.
 
 ## Platform and Fossify Commons surfaces
 
@@ -100,3 +100,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Switch appearance `3d35190d` — verified Alarm and Settings checked-thumb preference refresh in live activities, accessibility nodes and unchanged toggle writes. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Timer reset guard `6edb309f` — verified immediate Reset/Pause/duplicate Reset, recovery to Idle, one-shot removal and valid Start/Pause/Resume actions on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Legacy cleanup `2c87c0f2` — removed unused app-owned views and layout dependencies. Both debug APKs assembled, unit-test tasks were NO-SOURCE, and final device smoke preserved the existing database fixture. Final lint found three presentation diagnostics requiring correction.
+- Final lint corrections `df1ed62a` — explicitly gated the app-language route, keyed duration formatting to configuration locale, and used measured alarm-picker width. Both debug builds and both lints passed against the existing lint baseline. Both unit-test tasks reported `NO-SOURCE`. API 37 smoke checks covered language and duration routes and portrait/compact/wide landscape picker layouts. The final fixture database checksums matched.
