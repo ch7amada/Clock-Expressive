@@ -1,0 +1,1 @@
+Builds the release APK with OpenJDK 21 to match F-Droid’s build environment.
