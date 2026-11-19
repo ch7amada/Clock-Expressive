@@ -30,10 +30,10 @@ import org.fossify.clock.helpers.SORT_BY_TIMER_DURATION
 import org.fossify.clock.models.Timer
 import org.fossify.clock.models.TimerEvent
 import org.fossify.clock.models.TimerState
+import org.fossify.clock.ui.dialogs.showPermissionExplanation
 import org.fossify.clock.ui.theme.ClockTheme
 import org.fossify.clock.ui.timer.TimerListItem
 import org.fossify.clock.ui.timer.TimerScreen
-import org.fossify.commons.dialogs.PermissionRequiredDialog
 import org.fossify.commons.extensions.getFormattedDuration
 import org.fossify.commons.extensions.hideKeyboard
 import org.fossify.commons.extensions.openNotificationSettings
@@ -263,7 +263,7 @@ class TimerFragment : Fragment() {
                 }
                 EventBus.getDefault().post(event)
             } else {
-                PermissionRequiredDialog(
+                showPermissionExplanation(
                     activity = activity,
                     textId = CommonsR.string.allow_notifications_reminders,
                     positiveActionCallback = { activity.openNotificationSettings() },

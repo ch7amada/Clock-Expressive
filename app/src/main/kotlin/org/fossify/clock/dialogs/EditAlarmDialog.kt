@@ -29,9 +29,9 @@ import org.fossify.clock.helpers.updateNonRecurringAlarmDay
 import org.fossify.clock.models.Alarm
 import org.fossify.clock.ui.dialogs.AlarmEditorContent
 import org.fossify.clock.ui.dialogs.showAlarmTimePicker
+import org.fossify.clock.ui.dialogs.showFirstAlarmWarning
 import org.fossify.clock.ui.dialogs.showReminderSoundDialog
 import org.fossify.clock.ui.theme.ClockTheme
-import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.extensions.getDefaultAlarmSound
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.models.AlarmSound
@@ -171,12 +171,7 @@ class EditAlarmDialog(
         if (!dialog.isShowing) return
 
         if (!activity.config.wasAlarmWarningShown) {
-            ConfirmationDialog(
-                activity = activity,
-                messageId = CommonsR.string.alarm_warning,
-                positive = CommonsR.string.ok,
-                negative = 0,
-            ) {
+            showFirstAlarmWarning(activity) {
                 activity.config.wasAlarmWarningShown = true
                 saveAlarm()
             }

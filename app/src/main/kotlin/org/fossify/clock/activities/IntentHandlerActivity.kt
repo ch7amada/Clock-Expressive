@@ -34,7 +34,7 @@ import org.fossify.clock.models.AlarmEvent
 import org.fossify.clock.models.Timer
 import org.fossify.clock.models.TimerEvent
 import org.fossify.clock.models.TimerState
-import org.fossify.commons.dialogs.PermissionRequiredDialog
+import org.fossify.clock.ui.dialogs.showPermissionExplanation
 import org.fossify.commons.extensions.getDefaultAlarmSound
 import org.fossify.commons.extensions.getFilenameFromUri
 import org.fossify.commons.extensions.openNotificationSettings
@@ -404,7 +404,7 @@ class IntentHandlerActivity : SimpleActivity() {
                     finish()
                 }
             } else {
-                PermissionRequiredDialog(
+                showPermissionExplanation(
                     activity = this,
                     textId = org.fossify.commons.R.string.allow_notifications_reminders,
                     positiveActionCallback = {

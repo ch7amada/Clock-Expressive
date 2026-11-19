@@ -1,8 +1,8 @@
 package org.fossify.clock.extensions
 
 import org.fossify.clock.BuildConfig
+import org.fossify.clock.ui.dialogs.showPermissionExplanation
 import org.fossify.commons.activities.BaseSimpleActivity
-import org.fossify.commons.dialogs.PermissionRequiredDialog
 import org.fossify.commons.extensions.canUseFullScreenIntent
 import org.fossify.commons.extensions.openFullScreenIntentSettings
 import org.fossify.commons.extensions.openNotificationSettings
@@ -15,7 +15,7 @@ fun BaseSimpleActivity.handleFullScreenNotificationsPermission(
             if (canUseFullScreenIntent()) {
                 notificationsCallback(true)
             } else {
-                PermissionRequiredDialog(
+                showPermissionExplanation(
                     activity = this,
                     textId = org.fossify.commons.R.string.allow_full_screen_notifications_reminders,
                     positiveActionCallback = {
@@ -27,7 +27,7 @@ fun BaseSimpleActivity.handleFullScreenNotificationsPermission(
                 )
             }
         } else {
-            PermissionRequiredDialog(
+            showPermissionExplanation(
                 activity = this,
                 textId = org.fossify.commons.R.string.allow_notifications_reminders,
                 positiveActionCallback = {

@@ -39,8 +39,8 @@ import org.fossify.clock.models.Alarm
 import org.fossify.clock.models.AlarmEvent
 import org.fossify.clock.ui.alarm.AlarmListItem
 import org.fossify.clock.ui.alarm.AlarmScreen
+import org.fossify.clock.ui.dialogs.showFirstAlarmWarning
 import org.fossify.clock.ui.theme.ClockTheme
-import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.extensions.getSelectedDaysString
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.helpers.EVERY_DAY_BIT
@@ -241,12 +241,7 @@ class AlarmFragment : Fragment() {
         val alarm = alarms.firstOrNull { it.id == id } ?: return
 
         if (alarm.isRecurring() && !activity.config.wasAlarmWarningShown) {
-            ConfirmationDialog(
-                activity = activity,
-                messageId = CommonsR.string.alarm_warning,
-                positive = CommonsR.string.ok,
-                negative = 0,
-            ) {
+            showFirstAlarmWarning(activity) {
                 activity.config.wasAlarmWarningShown = true
                 updateAlarmEnabledState(id, enabled)
             }

@@ -16,11 +16,11 @@ import org.fossify.clock.extensions.config
 import org.fossify.clock.helpers.STOPWATCH_LIVE_LAP_ID
 import org.fossify.clock.helpers.Stopwatch
 import org.fossify.clock.models.Lap
+import org.fossify.clock.ui.dialogs.showPermissionExplanation
 import org.fossify.clock.ui.stopwatch.StopwatchLap
 import org.fossify.clock.ui.stopwatch.StopwatchScreen
 import org.fossify.clock.ui.stopwatch.StopwatchUiState
 import org.fossify.clock.ui.theme.ClockTheme
-import org.fossify.commons.dialogs.PermissionRequiredDialog
 import org.fossify.commons.extensions.flipBit
 import org.fossify.commons.extensions.openNotificationSettings
 import org.fossify.commons.helpers.SORT_DESCENDING
@@ -78,7 +78,7 @@ class StopwatchFragment : Fragment() {
             if (granted) {
                 Stopwatch.toggle()
             } else {
-                PermissionRequiredDialog(
+                showPermissionExplanation(
                     activity,
                     org.fossify.commons.R.string.allow_notifications_reminders,
                     activity::openNotificationSettings,
