@@ -33,6 +33,7 @@ import org.fossify.clock.extensions.updateWidgets
 import org.fossify.clock.helpers.DEFAULT_ALARM_MINUTES
 import org.fossify.clock.helpers.SORT_BY_ALARM_TIME
 import org.fossify.clock.helpers.SORT_BY_DATE_AND_TIME
+import org.fossify.clock.helpers.getTimeOfNextAlarm
 import org.fossify.clock.helpers.getTomorrowBit
 import org.fossify.clock.helpers.updateNonRecurringAlarmDay
 import org.fossify.clock.models.Alarm
@@ -50,6 +51,7 @@ import org.fossify.commons.models.AlarmSound
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import java.util.Calendar
 import org.fossify.commons.R as CommonsR
 
 class AlarmFragment : Fragment() {
@@ -153,6 +155,13 @@ class AlarmFragment : Fragment() {
     private fun publishAlarms(alarms: List<Alarm>) {
         val context = context ?: return
         this.alarms = alarms
+        val now = Calendar.getInstance()
+        val nextAlarmId = alarms.asSequence()
+            .filter { it.isEnabled }
+            .mapNotNull { alarm -> getTimeOfNextAlarm(alarm)?.let { alarm.id to it } }
+            .filter { (_, occurrence) -> occurrence > now }
+            .minWithOrNull(compareBy({ it.second }, { it.first }))
+            ?.first
         rows = alarms.map { alarm ->
             val days = when {
                 alarm.days == EVERY_DAY_BIT -> context.getString(CommonsR.string.every_day)
@@ -167,6 +176,7 @@ class AlarmFragment : Fragment() {
                 days = days,
                 label = alarm.label,
                 enabled = alarm.isEnabled,
+                isNext = alarm.id == nextAlarmId,
             )
         }
     }

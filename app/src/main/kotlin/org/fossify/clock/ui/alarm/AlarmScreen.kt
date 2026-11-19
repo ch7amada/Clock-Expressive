@@ -2,6 +2,7 @@ package org.fossify.clock.ui.alarm
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,14 +16,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,6 +36,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -59,6 +64,7 @@ internal data class AlarmListItem(
     val days: String,
     val label: String,
     val enabled: Boolean,
+    val isNext: Boolean,
 )
 
 @Composable
@@ -87,7 +93,10 @@ internal fun AlarmScreen(
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         BoxWithConstraints(contentAlignment = Alignment.TopCenter) {
+            val compactHeight = maxHeight < 320.dp
             val gutter = if (maxWidth < 400.dp) 16.dp else 24.dp
+            val wideCompact = compactHeight && maxWidth >= 600.dp
+            val useSideAction = wideCompact && !selecting
             Column(
                 modifier = Modifier
                     .widthIn(max = 680.dp)
@@ -114,10 +123,10 @@ internal fun AlarmScreen(
                         contentPadding = PaddingValues(
                             start = gutter,
                             top = 12.dp,
-                            end = gutter,
-                            bottom = bottomPadding,
+                            end = if (useSideAction) gutter + 72.dp else gutter,
+                            bottom = if (useSideAction) 16.dp else bottomPadding,
                         ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (compactHeight) 8.dp else 10.dp),
                     ) {
                         items(alarms.orEmpty(), key = { it.id }) { alarm ->
                             ReorderableItem(
@@ -130,6 +139,8 @@ internal fun AlarmScreen(
                                     selected = alarm.id in selectedIds,
                                     selecting = selecting,
                                     isDragging = isDragging,
+                                    compactHeight = compactHeight,
+                                    showSideHeading = wideCompact,
                                     onClick = { onClick(alarm.id) },
                                     onLongClick = { onLongClick(alarm.id) },
                                     onToggle = { onToggle(alarm.id, it) },
@@ -171,7 +182,17 @@ internal fun AlarmScreen(
                         }
                     }
 
-                    if (!selecting) {
+                    if (useSideAction) {
+                        FloatingActionButton(
+                            onClick = onAdd,
+                            modifier = Modifier.align(Alignment.TopEnd).padding(end = gutter, top = 12.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(CommonsR.drawable.ic_plus_vector),
+                                contentDescription = stringResource(R.string.add_alarm),
+                            )
+                        }
+                    } else if (!selecting) {
                         ExtendedFloatingActionButton(
                             text = { Text(stringResource(R.string.add_alarm)) },
                             icon = { Icon(painterResource(CommonsR.drawable.ic_plus_vector), contentDescription = null) },
@@ -191,6 +212,8 @@ private fun AlarmRow(
     selected: Boolean,
     selecting: Boolean,
     isDragging: Boolean,
+    compactHeight: Boolean,
+    showSideHeading: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggle: (Boolean) -> Unit,
@@ -200,66 +223,151 @@ private fun AlarmRow(
     val motion = MaterialTheme.motionScheme
     val color by animateColorAsState(
         targetValue = when {
-            selected -> colors.primaryContainer
-            isDragging -> colors.surfaceContainerHigh
-            else -> colors.surfaceContainerLow
+            alarm.isNext -> colors.primaryContainer
+            selected -> colors.secondaryContainer
+            alarm.enabled -> colors.surfaceContainerLow
+            else -> colors.surface
         },
         animationSpec = motion.fastEffectsSpec(),
         label = "Alarm row color",
     )
-    val elevation by animateDpAsState(
-        targetValue = if (isDragging) 6.dp else 0.dp,
-        animationSpec = motion.fastSpatialSpec(),
-        label = "Alarm row elevation",
+    val controlColor by animateColorAsState(
+        targetValue = when {
+            alarm.isNext -> colors.surface
+            selected -> colors.surfaceContainerHighest
+            alarm.enabled -> colors.surfaceContainerHigh
+            else -> Color.Transparent
+        },
+        animationSpec = motion.fastEffectsSpec(),
+        label = "Alarm switch background",
     )
-    val cornerRadius by animateDpAsState(
-        targetValue = if (isDragging) 20.dp else 28.dp,
-        animationSpec = motion.fastSpatialSpec(),
-        label = "Alarm row corner radius",
+    val borderColor by animateColorAsState(
+        targetValue = when {
+            selected -> colors.primary
+            !alarm.enabled -> colors.outlineVariant
+            else -> Color.Transparent
+        },
+        animationSpec = motion.fastEffectsSpec(),
+        label = "Alarm row outline",
     )
+    val leadingCorner by animateDpAsState(
+        targetValue = when {
+            alarm.isNext -> 48.dp
+            selected -> 24.dp
+            else -> 12.dp
+        },
+        animationSpec = motion.fastSpatialSpec(),
+        label = "Alarm row leading corner",
+    )
+    val trailingCorner by animateDpAsState(
+        targetValue = when {
+            alarm.isNext -> 14.dp
+            selected -> 12.dp
+            else -> 30.dp
+        },
+        animationSpec = motion.fastSpatialSpec(),
+        label = "Alarm row trailing corner",
+    )
+    val contentColor = when {
+        alarm.isNext -> colors.onPrimaryContainer
+        selected -> colors.onSecondaryContainer
+        alarm.enabled -> colors.onSurface
+        else -> colors.onSurfaceVariant
+    }
     val alarmDescription = stringResource(CommonsR.string.alarm)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(cornerRadius),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = if (alarm.isNext) 0.dp else 12.dp),
+        shape = RoundedCornerShape(
+            topStart = leadingCorner,
+            topEnd = trailingCorner,
+            bottomEnd = if (alarm.isNext) leadingCorner else trailingCorner,
+            bottomStart = if (alarm.isNext) trailingCorner else leadingCorner,
+        ),
         color = color,
-        contentColor = if (selected) colors.onPrimaryContainer else colors.onSurface,
-        shadowElevation = elevation,
+        contentColor = contentColor,
+        border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
+        shadowElevation = if (isDragging) 6.dp else 0.dp,
     ) {
         Row(
             modifier = Modifier
                 .then(if (selecting) Modifier.semantics { this.selected = selected } else Modifier)
-                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                .heightIn(min = 100.dp)
-                .padding(start = 20.dp, top = 14.dp, end = if (selecting) 4.dp else 16.dp, bottom = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            verticalAlignment = Alignment.Top,
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = alarm.time,
-                    maxLines = 1,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 36.sp),
-                    style = MaterialTheme.typography.displaySmallEmphasized.copy(fontFeatureSettings = "tnum"),
-                )
-                if (alarm.label.isNotEmpty()) {
-                    Text(text = alarm.label, style = MaterialTheme.typography.titleMedium)
-                }
-                Text(
-                    text = alarm.days,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
-                )
+            if (alarm.isNext && showSideHeading) {
+                UpcomingAlarmHeading(Modifier.widthIn(max = 184.dp))
             }
+            Column(Modifier.weight(1f)) {
+                if (alarm.isNext && !showSideHeading) {
+                    UpcomingAlarmHeading(Modifier.fillMaxWidth())
+                }
+                Row(
+                    modifier = Modifier
+                        .heightIn(min = if (alarm.isNext && !compactHeight) 124.dp else 64.dp)
+                        .padding(
+                            start = if (alarm.isNext) 20.dp else 14.dp,
+                            end = if (selecting) 6.dp else 12.dp,
+                            top = if (alarm.isNext && !compactHeight) 10.dp else 6.dp,
+                            bottom = if (alarm.isNext && !compactHeight) 14.dp else 6.dp,
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = if (alarm.isNext && showSideHeading) Alignment.Top else Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        val maxTimeSize = when {
+                            alarm.isNext && !compactHeight -> 68.sp
+                            alarm.isNext -> 50.sp
+                            else -> 32.sp
+                        }
+                        Text(
+                            text = alarm.time,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = maxTimeSize),
+                            style = if (alarm.isNext) {
+                                MaterialTheme.typography.displayLargeEmphasized.copy(fontFeatureSettings = "tnum")
+                            } else {
+                                MaterialTheme.typography.headlineLargeEmphasized.copy(fontFeatureSettings = "tnum")
+                            },
+                        )
+                        if (alarm.label.isNotEmpty()) {
+                            Text(text = alarm.label, style = MaterialTheme.typography.titleMedium)
+                        }
+                        Text(
+                            text = alarm.days,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (alarm.isNext || selected) contentColor else colors.onSurfaceVariant,
+                        )
+                    }
 
-            ClockSwitch(
-                checked = alarm.enabled,
-                onCheckedChange = onToggle,
-                modifier = Modifier.semantics { contentDescription = "$alarmDescription ${alarm.time}" },
-            )
-            if (selecting) {
-                dragHandle()
+                    Surface(color = controlColor, shape = CircleShape) {
+                        ClockSwitch(
+                            checked = alarm.enabled,
+                            onCheckedChange = onToggle,
+                            modifier = Modifier
+                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                                .semantics { contentDescription = "$alarmDescription ${alarm.time}" },
+                        )
+                    }
+                    if (selecting) {
+                        dragHandle()
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun UpcomingAlarmHeading(modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Surface(modifier = modifier, color = colors.primary, contentColor = colors.onPrimary) {
+        Text(
+            text = stringResource(R.string.upcoming_alarm),
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(start = 32.dp, top = 10.dp, end = 16.dp, bottom = 10.dp),
+        )
     }
 }
 
