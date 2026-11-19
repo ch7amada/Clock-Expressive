@@ -3,31 +3,46 @@ package org.fossify.clock.activities
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ShortcutInfo
+import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,19 +53,25 @@ import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -252,38 +273,66 @@ class MainActivity : SimpleActivity() {
 
     @Composable
     private fun MainHeader() {
-        val colors = MaterialTheme.colorScheme
-        val titleStyle = MaterialTheme.typography.headlineSmallEmphasized
-        val titleHeight = with(LocalDensity.current) { titleStyle.lineHeight.toDp() }
-        TopAppBar(
-            title = {
-                Text(
-                    text = stringResource(R.string.clock),
-                    style = titleStyle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            },
-            actions = {
-                if (selectedTab == TAB_ALARM_INDEX || selectedTab == TAB_TIMER_INDEX) {
-                    IconButton(onClick = ::showSortDialog) {
-                        Icon(
-                            painter = painterResource(org.fossify.commons.R.drawable.ic_sort_vector),
-                            contentDescription = stringResource(org.fossify.commons.R.string.sort_by),
-                        )
+        val tab = MainTab.entries[selectedTab]
+        val (containerColor, contentColor) = tabAccent(tab)
+        val hasSort = tab == MainTab.ALARM || tab == MainTab.TIMER
+        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val motion = MaterialTheme.motionScheme
+        val headerInsets = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+            .union(WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal))
+            .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(headerInsets)
+                .padding(start = 24.dp, end = 16.dp, bottom = if (landscape) 2.dp else 6.dp)
+                .heightIn(min = if (landscape) 64.dp else 72.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(tab.label),
+                modifier = Modifier.weight(1f).semantics { heading() },
+                style = if (landscape) {
+                    MaterialTheme.typography.headlineSmallEmphasized
+                } else {
+                    MaterialTheme.typography.headlineLargeEmphasized
+                },
+                autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = if (landscape) 26.sp else 36.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            HorizontalFloatingToolbar(
+                expanded = true,
+                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
+                    toolbarContainerColor = containerColor,
+                    toolbarContentColor = contentColor,
+                ),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 28.dp, bottomStart = 16.dp, bottomEnd = 28.dp),
+                expandedShadowElevation = 2.dp,
+                collapsedShadowElevation = 2.dp,
+                leadingContent = {
+                    AnimatedVisibility(
+                        visible = hasSort,
+                        enter = expandHorizontally(motion.fastSpatialSpec(), expandFrom = Alignment.End) +
+                            fadeIn(motion.fastEffectsSpec()),
+                        exit = shrinkHorizontally(motion.fastSpatialSpec(), shrinkTowards = Alignment.End) +
+                            fadeOut(motion.fastEffectsSpec()),
+                    ) {
+                        IconButton(onClick = ::showSortDialog, enabled = hasSort) {
+                            Icon(
+                                painter = painterResource(org.fossify.commons.R.drawable.ic_sort_vector),
+                                contentDescription = stringResource(org.fossify.commons.R.string.sort_by),
+                            )
+                        }
                     }
-                }
+                },
+            ) {
                 MainOverflowMenu()
-            },
-            expandedHeight = maxOf(64.dp, titleHeight + 16.dp),
-            windowInsets = WindowInsets.statusBars.union(WindowInsets.displayCutout)
-                .only(WindowInsetsSides.Top),
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = colors.surface,
-                titleContentColor = colors.onSurface,
-                actionIconContentColor = colors.onSurface,
-            ),
-        )
+            }
+        }
     }
 
     @Composable
@@ -334,15 +383,23 @@ class MainActivity : SimpleActivity() {
     @Composable
     private fun MainNavigation(onTabClick: (Int) -> Unit) {
         val colors = MaterialTheme.colorScheme
+        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val dockShape = RoundedCornerShape(topStart = 28.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 28.dp)
         val bottomInsets = WindowInsets.navigationBars.union(WindowInsets.ime)
-            .union(WindowInsets.displayCutout).only(WindowInsetsSides.Bottom)
-        Surface(color = colors.surface) {
+            .union(WindowInsets.displayCutout).only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(bottomInsets)
+                .padding(horizontal = 12.dp, vertical = if (landscape) 4.dp else 8.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             ShortNavigationBar(
                 modifier = Modifier
+                    .widthIn(max = 560.dp)
                     .fillMaxWidth()
-                    .windowInsetsPadding(bottomInsets)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(MaterialTheme.shapes.large)
+                    .shadow(3.dp, dockShape)
+                    .clip(dockShape)
                     // Keep the width bounded without passing a full-width minimum to each item.
                     .wrapContentWidth(),
                 containerColor = colors.surfaceContainerHigh,
@@ -350,15 +407,14 @@ class MainActivity : SimpleActivity() {
                 windowInsets = WindowInsets(0),
                 arrangement = ShortNavigationBarArrangement.EqualWeight,
             ) {
-                val itemColors = ShortNavigationBarItemDefaults.colors(
-                    selectedIconColor = colors.onPrimaryContainer,
-                    selectedTextColorTopIconPosition = colors.onSurface,
-                    selectedIndicatorColor = colors.primaryContainer,
-                    unselectedIconColor = colors.onSurfaceVariant,
-                    unselectedTextColor = colors.onSurfaceVariant,
-                )
                 MainTab.entries.forEachIndexed { index, tab ->
                     val selected = index == selectedTab
+                    val (containerColor, contentColor) = tabAccent(tab)
+                    val underlineColor = if (landscape) contentColor else colors.onSurface
+                    val underlineFraction by animateFloatAsState(
+                        targetValue = if (selected) 1f else 0f,
+                        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                    )
                     ShortNavigationBarItem(
                         selected = selected,
                         onClick = { onTabClick(index) },
@@ -371,17 +427,45 @@ class MainActivity : SimpleActivity() {
                         label = {
                             Text(
                                 text = stringResource(tab.label),
+                                modifier = Modifier
+                                    .drawBehind {
+                                        val height = 2.dp.toPx()
+                                        val width = minOf(24.dp.toPx(), size.width) * underlineFraction.coerceIn(0f, 1f)
+                                        drawRoundRect(
+                                            color = underlineColor,
+                                            topLeft = Offset((size.width - width) / 2f, size.height - height),
+                                            size = Size(width, height),
+                                            cornerRadius = CornerRadius(height / 2f),
+                                        )
+                                    }
+                                    .padding(bottom = 4.dp),
                                 textAlign = TextAlign.Center,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 12.sp),
                             )
                         },
-                        iconPosition = NavigationItemIconPosition.Top,
-                        colors = itemColors,
+                        iconPosition = if (landscape) NavigationItemIconPosition.Start else NavigationItemIconPosition.Top,
+                        colors = ShortNavigationBarItemDefaults.colors(
+                            selectedIconColor = contentColor,
+                            selectedTextColorTopIconPosition = colors.onSurface,
+                            selectedTextColorStartIconPosition = contentColor,
+                            selectedIndicatorColor = containerColor,
+                            unselectedIconColor = colors.onSurfaceVariant,
+                            unselectedTextColor = colors.onSurfaceVariant,
+                        ),
                     )
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun tabAccent(tab: MainTab) = with(MaterialTheme.colorScheme) {
+        when (tab) {
+            MainTab.CLOCK, MainTab.ALARM -> primaryContainer to onPrimaryContainer
+            MainTab.STOPWATCH -> secondaryContainer to onSecondaryContainer
+            MainTab.TIMER -> tertiaryContainer to onTertiaryContainer
         }
     }
 
