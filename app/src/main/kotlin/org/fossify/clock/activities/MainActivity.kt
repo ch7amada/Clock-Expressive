@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -39,14 +38,18 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationItemIconPosition
+import androidx.compose.material3.RippleConfiguration
+import androidx.compose.material3.RippleDefaults
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarArrangement
 import androidx.compose.material3.ShortNavigationBarItem
@@ -54,6 +57,7 @@ import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,11 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -74,6 +74,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
@@ -321,7 +322,7 @@ class MainActivity : SimpleActivity() {
                         exit = shrinkHorizontally(motion.fastSpatialSpec(), shrinkTowards = Alignment.End) +
                             fadeOut(motion.fastEffectsSpec()),
                     ) {
-                        IconButton(onClick = ::showSortDialog, enabled = hasSort) {
+                        ToolbarIconButton(onClick = ::showSortDialog, enabled = hasSort) {
                             Icon(
                                 painter = painterResource(org.fossify.commons.R.drawable.ic_sort_vector),
                                 contentDescription = stringResource(org.fossify.commons.R.string.sort_by),
@@ -335,18 +336,48 @@ class MainActivity : SimpleActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    @Composable
+    private fun ToolbarIconButton(onClick: () -> Unit, enabled: Boolean = true, icon: @Composable () -> Unit) {
+        val ripple = remember {
+            val alpha = RippleDefaults.RippleAlpha
+            RippleConfiguration(
+                rippleAlpha = RippleAlpha(
+                    draggedAlpha = alpha.draggedAlpha,
+                    focusedAlpha = alpha.focusedAlpha,
+                    hoveredAlpha = alpha.hoveredAlpha,
+                    pressedAlpha = 0f,
+                ),
+            )
+        }
+        CompositionLocalProvider(LocalRippleConfiguration provides ripple) {
+            IconButton(onClick = onClick, enabled = enabled, content = icon)
+        }
+    }
+
     @Composable
     private fun MainOverflowMenu() {
         var expanded by remember { mutableStateOf(false) }
         Box {
-            IconButton(onClick = { expanded = true }) {
+            ToolbarIconButton(onClick = { expanded = true }) {
                 Icon(
                     painter = painterResource(org.fossify.commons.R.drawable.ic_three_dots_vector),
                     contentDescription = stringResource(org.fossify.commons.R.string.more_options),
                 )
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.widthIn(min = 200.dp),
+                offset = DpOffset(0.dp, 12.dp),
+                shape = MaterialTheme.shapes.extraLarge,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ) {
+                val itemModifier = Modifier.heightIn(min = 56.dp)
+                val itemPadding = PaddingValues(horizontal = 20.dp)
                 DropdownMenuItem(
+                    modifier = itemModifier,
+                    contentPadding = itemPadding,
                     text = { Text(stringResource(org.fossify.commons.R.string.settings)) },
                     onClick = {
                         expanded = false
@@ -354,6 +385,8 @@ class MainActivity : SimpleActivity() {
                     },
                 )
                 DropdownMenuItem(
+                    modifier = itemModifier,
+                    contentPadding = itemPadding,
                     text = { Text(stringResource(org.fossify.commons.R.string.about)) },
                     onClick = {
                         expanded = false
@@ -362,6 +395,8 @@ class MainActivity : SimpleActivity() {
                 )
                 if (resources.getBoolean(org.fossify.commons.R.bool.is_google_play_build)) {
                     DropdownMenuItem(
+                        modifier = itemModifier,
+                        contentPadding = itemPadding,
                         text = { Text(stringResource(org.fossify.commons.R.string.more_fossify_apps)) },
                         onClick = {
                             expanded = false
@@ -410,11 +445,6 @@ class MainActivity : SimpleActivity() {
                 MainTab.entries.forEachIndexed { index, tab ->
                     val selected = index == selectedTab
                     val (containerColor, contentColor) = tabAccent(tab)
-                    val underlineColor = if (landscape) contentColor else colors.onSurface
-                    val underlineFraction by animateFloatAsState(
-                        targetValue = if (selected) 1f else 0f,
-                        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
-                    )
                     ShortNavigationBarItem(
                         selected = selected,
                         onClick = { onTabClick(index) },
@@ -427,18 +457,6 @@ class MainActivity : SimpleActivity() {
                         label = {
                             Text(
                                 text = stringResource(tab.label),
-                                modifier = Modifier
-                                    .drawBehind {
-                                        val height = 2.dp.toPx()
-                                        val width = minOf(24.dp.toPx(), size.width) * underlineFraction.coerceIn(0f, 1f)
-                                        drawRoundRect(
-                                            color = underlineColor,
-                                            topLeft = Offset((size.width - width) / 2f, size.height - height),
-                                            size = Size(width, height),
-                                            cornerRadius = CornerRadius(height / 2f),
-                                        )
-                                    }
-                                    .padding(bottom = 4.dp),
                                 textAlign = TextAlign.Center,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,

@@ -24,8 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.MediumExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MediumFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -41,11 +40,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -125,7 +121,7 @@ internal fun AlarmScreen(
                         contentPadding = PaddingValues(
                             start = gutter,
                             top = 12.dp,
-                            end = if (useSideAction) gutter + 72.dp else gutter,
+                            end = if (useSideAction) gutter + 96.dp else gutter,
                             bottom = if (useSideAction) 16.dp else bottomPadding,
                         ),
                         verticalArrangement = Arrangement.spacedBy(if (compactHeight) 8.dp else 10.dp),
@@ -183,30 +179,22 @@ internal fun AlarmScreen(
                         }
                     }
 
-                    if (useSideAction) {
-                        FloatingActionButton(
+                    if (!selecting) {
+                        MediumFloatingActionButton(
                             onClick = onAdd,
-                            modifier = Modifier.align(Alignment.TopEnd).padding(end = gutter, top = 12.dp),
+                            modifier = if (useSideAction) {
+                                Modifier.align(Alignment.TopEnd).padding(end = gutter, top = 12.dp)
+                            } else {
+                                Modifier.align(Alignment.BottomEnd).padding(end = gutter, bottom = 16.dp)
+                            },
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         ) {
                             Icon(
                                 painter = painterResource(CommonsR.drawable.ic_plus_vector),
                                 contentDescription = stringResource(R.string.add_alarm),
                             )
                         }
-                    } else if (!selecting) {
-                        val addDescription = stringResource(R.string.add_alarm)
-                        MediumExtendedFloatingActionButton(
-                            text = { Text(addDescription, Modifier.clearAndSetSemantics {}) },
-                            icon = { Icon(painterResource(CommonsR.drawable.ic_plus_vector), contentDescription = null) },
-                            onClick = onAdd,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(end = gutter, bottom = 16.dp)
-                                .semantics {
-                                    contentDescription = addDescription
-                                    role = Role.Button
-                                },
-                        )
                     }
                 }
             }

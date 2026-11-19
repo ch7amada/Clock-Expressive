@@ -29,8 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MediumExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.MediumFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -53,12 +52,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.hideFromAccessibility
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -154,7 +151,7 @@ internal fun TimerScreen(
                         contentPadding = PaddingValues(
                             start = gutter,
                             top = if (compactLandscape) 4.dp else 12.dp,
-                            end = if (compactLandscape && !selecting) gutter + 64.dp else gutter,
+                            end = if (compactLandscape && !selecting) gutter + 88.dp else gutter,
                             bottom = if (compactLandscape && !selecting) 12.dp else bottomPadding,
                         ),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -219,25 +216,15 @@ internal fun TimerScreen(
                     }
 
                     if (!selecting) {
-                        val addDescription = stringResource(R.string.new_timer)
-                        val addModifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = gutter, bottom = 16.dp)
-                            .semantics {
-                                contentDescription = addDescription
-                                role = Role.Button
-                            }
-                        val addIcon: @Composable () -> Unit = {
-                            Icon(painterResource(CommonsR.drawable.ic_plus_vector), contentDescription = null)
-                        }
-                        if (compactLandscape) {
-                            FloatingActionButton(onClick = onAdd, modifier = addModifier, content = addIcon)
-                        } else {
-                            MediumExtendedFloatingActionButton(
-                                text = { Text(addDescription, Modifier.clearAndSetSemantics {}) },
-                                icon = addIcon,
-                                onClick = onAdd,
-                                modifier = addModifier,
+                        MediumFloatingActionButton(
+                            onClick = onAdd,
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(end = gutter, bottom = 16.dp),
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ) {
+                            Icon(
+                                painter = painterResource(CommonsR.drawable.ic_plus_vector),
+                                contentDescription = stringResource(R.string.new_timer),
                             )
                         }
                     }
