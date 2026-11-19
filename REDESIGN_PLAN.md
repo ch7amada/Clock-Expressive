@@ -46,7 +46,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Timer editor — `EditTimerDialog.kt`. Group duration picker, label and sound in a scrollable form with existing input ranges and save semantics.
 - [x] Timers — `TimerFragment.kt` and `TimerAdapter.kt`. Use a determinate wavy indicator for the active timer, with non-motion status and accessible controls. Preserve event updates, start/pause/reset, sorting, edit/delete and permission handling.
 - [x] Compose pager host — replace the temporary RtlViewPager and shell XML with Foundation HorizontalPager and lifecycle-aware AndroidFragment hosts for the now-Compose tab content. Preserve RTL swipes, fragment controllers, selected-page persistence, deep links, shortcuts and cross-tab callbacks.
-- [ ] Ringing alarm — `AlarmActivity.kt` and `activity_alarm.xml`. Feature the alarm label and time, with spring-return drag feedback and TalkBack-accessible snooze/dismiss actions. Preserve lock-screen flags, thresholds, haptics and exactly-once dispatch.
+- [~] Ringing alarm — `AlarmActivity.kt` and `activity_alarm.xml`. Feature the alarm label and time, with spring-return drag feedback and TalkBack-accessible snooze/dismiss actions. Preserve lock-screen flags, thresholds, haptics and exactly-once dispatch.
 - [ ] Snooze reminder — `SnoozeReminderActivity.kt` and its duration dialog call sites. Use grouped duration choices with the original range and timing.
 - [ ] Alarm intent selector — `SelectAlarmDialog.kt` and `IntentHandlerActivity.kt` UI call site. Preserve dismiss alarm matching, selection and finish behavior.
 - [ ] Export form — `ExportDataDialog.kt`. Preserve default path, filename validation, scopes and completion contract.
