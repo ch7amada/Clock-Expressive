@@ -89,6 +89,7 @@ class AlarmFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, selectionBackCallback)
+        setupAlarms()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,12 +105,6 @@ class AlarmFragment : Fragment() {
     override fun onDestroyView() {
         clearSelection()
         super.onDestroyView()
-    }
-
-    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        super.setUserVisibleHint(isVisibleToUser)
-        if (!isVisibleToUser) clearSelection()
     }
 
     override fun onResume() {
@@ -196,7 +191,7 @@ class AlarmFragment : Fragment() {
         updateSelection(if (id in selectedIds) selectedIds - id else selectedIds + id)
     }
 
-    private fun clearSelection() = updateSelection(emptySet())
+    internal fun clearSelection() = updateSelection(emptySet())
 
     private fun updateSelection(ids: Set<Int>) {
         selectedIds = ids

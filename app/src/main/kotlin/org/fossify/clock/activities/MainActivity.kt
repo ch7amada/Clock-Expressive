@@ -7,10 +7,13 @@ import android.graphics.drawable.Icon
 import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
@@ -20,6 +23,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -37,30 +42,36 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.doOnLayout
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.commitNow
+import androidx.fragment.compose.AndroidFragment
+import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.launch
 import org.fossify.clock.BuildConfig
 import org.fossify.clock.R
-import org.fossify.clock.adapters.ViewPagerAdapter
-import org.fossify.clock.databinding.ActivityMainBinding
 import org.fossify.clock.extensions.alarmController
 import org.fossify.clock.extensions.config
 import org.fossify.clock.extensions.getEnabledAlarms
 import org.fossify.clock.extensions.handleFullScreenNotificationsPermission
 import org.fossify.clock.extensions.updateWidgets
+import org.fossify.clock.fragments.AlarmFragment
+import org.fossify.clock.fragments.ClockFragment
+import org.fossify.clock.fragments.StopwatchFragment
+import org.fossify.clock.fragments.TimerFragment
 import org.fossify.clock.helpers.INVALID_TIMER_ID
 import org.fossify.clock.helpers.OPEN_TAB
 import org.fossify.clock.helpers.PICK_AUDIO_FILE_INTENT_ID
@@ -82,11 +93,9 @@ import org.fossify.commons.extensions.appLaunched
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.convertToBitmap
 import org.fossify.commons.extensions.launchMoreAppsFromUsIntent
-import org.fossify.commons.extensions.onPageChangeListener
 import org.fossify.commons.extensions.shortcutManager
 import org.fossify.commons.extensions.storeNewYourAlarmSound
 import org.fossify.commons.extensions.toast
-import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.LICENSE_AUTOFITTEXTVIEW
 import org.fossify.commons.helpers.LICENSE_NUMBER_PICKER
 import org.fossify.commons.helpers.LICENSE_RTL
@@ -96,18 +105,30 @@ import java.time.temporal.WeekFields
 import java.util.Locale
 
 class MainActivity : SimpleActivity() {
-    private var selectedTab by mutableIntStateOf(TAB_CLOCK_INDEX)
-    private val binding: ActivityMainBinding by viewBinding(ActivityMainBinding::inflate)
+    private lateinit var pagerState: PagerState
+    private val selectedTab get() = pagerState.settledPage
+    private var pendingTab: TabRequest? = null
+    private val tabLifecycleCallbacks = object : FragmentManager.FragmentLifecycleCallbacks() {
+        override fun onFragmentResumed(fm: FragmentManager, fragment: Fragment) {
+            deliverTabRequest()
+        }
+
+        override fun onFragmentPaused(fm: FragmentManager, fragment: Fragment) {
+            when (fragment) {
+                is AlarmFragment -> if (selectedTab != TAB_ALARM_INDEX) fragment.clearSelection()
+                is TimerFragment -> if (selectedTab != TAB_TIMER_INDEX) fragment.clearSelection()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(binding.root)
+        setupPager(savedInstanceState)
+        setContent { ClockTheme { MainScreen() } }
         appLaunched(BuildConfig.APPLICATION_ID)
         // Commons pads the host horizontally for side navigation bars and cutouts.
         setupEdgeToEdge()
 
-        initFragments()
-        setupShell()
         updateWidgets()
         migrateFirstDayOfWeek()
         ensureBackgroundThread {
@@ -134,9 +155,19 @@ class MainActivity : SimpleActivity() {
         checkShortcuts()
     }
 
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        selectedTab = binding.viewPager.currentItem
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt(SELECTED_TAB_STATE, selectedTab)
+        pendingTab?.let { request ->
+            outState.putInt(PENDING_TAB_STATE, request.page)
+            outState.putInt(TIMER_ID, request.timerId)
+            outState.putBoolean(TOGGLE_STOPWATCH, request.startStopwatch)
+        }
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        supportFragmentManager.unregisterFragmentLifecycleCallbacks(tabLifecycleCallbacks)
+        super.onDestroy()
     }
 
     @SuppressLint("NewApi")
@@ -181,17 +212,41 @@ class MainActivity : SimpleActivity() {
         if (config.preventPhoneFromSleeping) {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
-        config.lastUsedViewPagerPage = binding.viewPager.currentItem
+        config.lastUsedViewPagerPage = selectedTab
     }
 
-    private fun setupShell() {
-        binding.mainHeader.apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { ClockTheme { MainHeader() } }
-        }
-        binding.mainNavigation.apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { ClockTheme { MainNavigation() } }
+    @Composable
+    private fun MainScreen() {
+        val scope = rememberCoroutineScope()
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            Column(Modifier.fillMaxSize()) {
+                MainHeader()
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f),
+                    beyondViewportPageCount = TABS_COUNT - 1,
+                    // AndroidFragment derives its container ID from the composition key.
+                    key = { MainTab.entries[it].name },
+                ) { page ->
+                    val maxLifecycle = if (page == selectedTab) Lifecycle.State.RESUMED else Lifecycle.State.STARTED
+                    val modifier = Modifier.fillMaxSize()
+                    when (page) {
+                        TAB_CLOCK_INDEX -> AndroidFragment<ClockFragment>(modifier, maxLifecycle = maxLifecycle)
+                        TAB_ALARM_INDEX -> AndroidFragment<AlarmFragment>(modifier, maxLifecycle = maxLifecycle)
+                        TAB_STOPWATCH_INDEX -> AndroidFragment<StopwatchFragment>(
+                            modifier, maxLifecycle = maxLifecycle, onUpdate = { deliverTabRequest() },
+                        )
+                        TAB_TIMER_INDEX -> AndroidFragment<TimerFragment>(
+                            modifier, maxLifecycle = maxLifecycle, onUpdate = { deliverTabRequest() },
+                        )
+                    }
+                }
+                MainNavigation { page ->
+                    if (page != pagerState.currentPage || pagerState.isScrollInProgress) {
+                        scope.launch { pagerState.animateScrollToPage(page) }
+                    }
+                }
+            }
         }
     }
 
@@ -270,14 +325,14 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun showSortDialog() {
-        when (binding.viewPager.currentItem) {
-            TAB_ALARM_INDEX -> getViewPagerAdapter()?.showAlarmSortDialog()
-            TAB_TIMER_INDEX -> getViewPagerAdapter()?.showTimerSortDialog()
+        when (selectedTab) {
+            TAB_ALARM_INDEX -> mountedTab<AlarmFragment>()?.showSortingDialog()
+            TAB_TIMER_INDEX -> mountedTab<TimerFragment>()?.showSortingDialog()
         }
     }
 
     @Composable
-    private fun MainNavigation() {
+    private fun MainNavigation(onTabClick: (Int) -> Unit) {
         val colors = MaterialTheme.colorScheme
         val bottomInsets = WindowInsets.navigationBars.union(WindowInsets.ime)
             .union(WindowInsets.displayCutout).only(WindowInsetsSides.Bottom)
@@ -306,7 +361,7 @@ class MainActivity : SimpleActivity() {
                     val selected = index == selectedTab
                     ShortNavigationBarItem(
                         selected = selected,
-                        onClick = { binding.viewPager.currentItem = index },
+                        onClick = { onTabClick(index) },
                         icon = {
                             Icon(
                                 painter = painterResource(if (selected) tab.filledIcon else tab.outlineIcon),
@@ -331,20 +386,14 @@ class MainActivity : SimpleActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        if (intent.extras?.containsKey(OPEN_TAB) == true) {
-            val tabToOpen = intent.getIntExtra(OPEN_TAB, TAB_CLOCK)
-            binding.viewPager.setCurrentItem(getTabIndex(tabToOpen), false)
-            if (tabToOpen == TAB_TIMER) {
-                val timerId = intent.getIntExtra(TIMER_ID, INVALID_TIMER_ID)
-                (binding.viewPager.adapter as ViewPagerAdapter).updateTimerPosition(timerId)
-            }
-            if (tabToOpen == TAB_STOPWATCH) {
-                if (intent.getBooleanExtra(TOGGLE_STOPWATCH, false)) {
-                    (binding.viewPager.adapter as ViewPagerAdapter).startStopWatch()
-                }
-            }
-        }
         super.onNewIntent(intent)
+        if (intent.hasExtra(OPEN_TAB)) {
+            val request = readTabRequest(intent)
+            intent.removeExtra(OPEN_TAB)
+            pendingTab = request
+            pagerState.requestScrollToPage(request.page)
+            deliverTabRequest()
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
@@ -359,36 +408,85 @@ class MainActivity : SimpleActivity() {
     private fun storeNewAlarmSound(resultData: Intent) {
         val newAlarmSound = storeNewYourAlarmSound(resultData)
 
-        when (binding.viewPager.currentItem) {
-            TAB_ALARM_INDEX -> getViewPagerAdapter()?.updateAlarmTabAlarmSound(newAlarmSound)
-            TAB_TIMER_INDEX -> getViewPagerAdapter()?.updateTimerTabAlarmSound(newAlarmSound)
+        when (selectedTab) {
+            TAB_ALARM_INDEX -> mountedTab<AlarmFragment>()?.updateAlarmSound(newAlarmSound)
+            TAB_TIMER_INDEX -> mountedTab<TimerFragment>()?.updateAlarmSound(newAlarmSound)
         }
     }
 
     fun updateClockTabAlarm() {
-        getViewPagerAdapter()?.updateClockTabAlarm()
+        mountedTab<ClockFragment>()?.updateAlarm()
     }
 
-    private fun getViewPagerAdapter() = binding.viewPager.adapter as? ViewPagerAdapter
+    private inline fun <reified T : Fragment> mountedTab(): T? =
+        supportFragmentManager.fragments.filterIsInstance<T>().firstOrNull { it.view?.parent != null }
 
-    private fun initFragments() {
-        val viewPagerAdapter = ViewPagerAdapter(supportFragmentManager)
-        binding.viewPager.adapter = viewPagerAdapter
-        binding.viewPager.onPageChangeListener { selectedTab = it }
+    private fun setupPager(savedInstanceState: Bundle?) {
+        // The XML pager added its tab fragments without the Compose hosts' tags.
+        val legacyTabs = supportFragmentManager.fragments.filter { fragment ->
+            when (fragment) {
+                is ClockFragment, is AlarmFragment, is StopwatchFragment, is TimerFragment -> fragment.tag == null
+                else -> false
+            }
+        }
+        if (legacyTabs.isNotEmpty()) {
+            supportFragmentManager.commitNow { legacyTabs.forEach { remove(it) } }
+        }
 
-        val tabToOpen = intent.getIntExtra(OPEN_TAB, config.defaultTab)
+        val hasTabIntent = savedInstanceState == null && intent.hasExtra(OPEN_TAB)
+        val request = when {
+            hasTabIntent -> readTabRequest(intent)
+            savedInstanceState?.containsKey(PENDING_TAB_STATE) == true -> TabRequest(
+                page = savedInstanceState.getInt(PENDING_TAB_STATE),
+                timerId = savedInstanceState.getInt(TIMER_ID, INVALID_TIMER_ID),
+                startStopwatch = savedInstanceState.getBoolean(TOGGLE_STOPWATCH),
+            )
+            else -> null
+        }
+        pendingTab = request
+        val initialPage = when {
+            request != null -> request.page
+            savedInstanceState?.containsKey(SELECTED_TAB_STATE) == true -> savedInstanceState.getInt(SELECTED_TAB_STATE)
+            legacyTabs.isNotEmpty() -> config.lastUsedViewPagerPage
+            else -> getTabIndex(config.defaultTab)
+        }
+        pagerState = PagerState(currentPage = initialPage.coerceIn(0, TABS_COUNT - 1)) { TABS_COUNT }
         intent.removeExtra(OPEN_TAB)
-        if (tabToOpen == TAB_STOPWATCH) {
-            config.toggleStopwatch = intent.getBooleanExtra(TOGGLE_STOPWATCH, false)
-        }
+        supportFragmentManager.registerFragmentLifecycleCallbacks(tabLifecycleCallbacks, false)
+    }
 
-        binding.viewPager.offscreenPageLimit = TABS_COUNT - 1
-        binding.viewPager.currentItem = getTabIndex(tabToOpen)
-        selectedTab = binding.viewPager.currentItem
-        if (tabToOpen == TAB_TIMER) {
-            val timerId = intent.getIntExtra(TIMER_ID, INVALID_TIMER_ID)
-            binding.viewPager.doOnLayout { viewPagerAdapter.updateTimerPosition(timerId) }
+    private fun readTabRequest(intent: Intent): TabRequest {
+        val page = getTabIndex(intent.getIntExtra(OPEN_TAB, TAB_CLOCK)).coerceIn(0, TABS_COUNT - 1)
+        return TabRequest(
+            page = page,
+            timerId = intent.getIntExtra(TIMER_ID, INVALID_TIMER_ID),
+            startStopwatch = page == TAB_STOPWATCH_INDEX && intent.getBooleanExtra(TOGGLE_STOPWATCH, false),
+        )
+    }
+
+    private fun deliverTabRequest() {
+        val request = pendingTab ?: return
+        if (request.page != selectedTab) return
+        when {
+            request.page == TAB_TIMER_INDEX -> {
+                val timer = mountedTab<TimerFragment>()?.takeIf { it.isResumed } ?: return
+                pendingTab = null
+                timer.updatePosition(request.timerId)
+            }
+            request.startStopwatch -> {
+                val stopwatch = mountedTab<StopwatchFragment>()?.takeIf { it.isResumed } ?: return
+                pendingTab = null
+                stopwatch.startStopWatch()
+            }
+            else -> pendingTab = null
         }
+    }
+
+    private data class TabRequest(val page: Int, val timerId: Int, val startStopwatch: Boolean)
+
+    private companion object {
+        const val SELECTED_TAB_STATE = "selected_tab"
+        const val PENDING_TAB_STATE = "pending_tab"
     }
 
     private enum class MainTab(val label: Int, val outlineIcon: Int, val filledIcon: Int) {

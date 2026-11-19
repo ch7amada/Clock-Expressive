@@ -72,27 +72,17 @@ class ClockFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, selectionBackCallback)
+        updateAlarm()
     }
 
-    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        super.setUserVisibleHint(isVisibleToUser)
-        if (isVisibleToUser && isResumed) {
-            refreshClock()
-        } else if (!isVisibleToUser) {
-            stopTicker()
-            clearSelection()
-        }
-    }
-
-    @Suppress("DEPRECATION")
     override fun onResume() {
         super.onResume()
-        if (userVisibleHint) refreshClock()
+        refreshClock()
     }
 
     override fun onPause() {
         stopTicker()
+        clearSelection()
         super.onPause()
     }
 

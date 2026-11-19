@@ -57,7 +57,7 @@ class TimerFragment : Fragment() {
     private var currentEditTimerDialog: EditTimerDialog? = null
 
     private val selectionBackCallback = object : OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() = updateSelection(emptySet())
+        override fun handleOnBackPressed() = clearSelection()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,7 +91,7 @@ class TimerFragment : Fragment() {
                     onReset = ::resetTimer,
                     onMove = ::moveTimer,
                     onDelete = ::deleteSelectedTimers,
-                    onClearSelection = { updateSelection(emptySet()) },
+                    onClearSelection = ::clearSelection,
                     onScrollComplete = { id ->
                         if (timerIdToScrollTo == id) timerIdToScrollTo = null
                     },
@@ -115,16 +115,10 @@ class TimerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        updateSelection(emptySet())
+        clearSelection()
         timers = emptyList()
         rows = null
         super.onDestroyView()
-    }
-
-    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        super.setUserVisibleHint(isVisibleToUser)
-        if (!isVisibleToUser) updateSelection(emptySet())
     }
 
     override fun onResume() {
@@ -234,6 +228,8 @@ class TimerFragment : Fragment() {
         updateSelection(if (id in selectedIds) selectedIds - id else selectedIds + id)
     }
 
+    internal fun clearSelection() = updateSelection(emptySet())
+
     private fun updateSelection(ids: Set<Int>) {
         selectedIds = ids
         selectionBackCallback.isEnabled = ids.isNotEmpty()
@@ -288,7 +284,7 @@ class TimerFragment : Fragment() {
         if (ids.isEmpty()) return
         pendingDeletes.addAll(ids)
         publishTimers(timers.filterNot { it.id in ids })
-        updateSelection(emptySet())
+        clearSelection()
         ids.forEach { id ->
             EventBus.getDefault().post(TimerEvent.Delete(id))
             activity.hideTimerNotification(id)
