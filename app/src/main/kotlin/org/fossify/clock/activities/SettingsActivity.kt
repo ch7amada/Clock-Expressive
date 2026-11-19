@@ -25,6 +25,7 @@ import org.fossify.clock.helpers.TAB_STOPWATCH
 import org.fossify.clock.helpers.TAB_TIMER
 import org.fossify.clock.helpers.TimerHelper
 import org.fossify.clock.models.AlarmTimerBackup
+import org.fossify.clock.ui.dialogs.showReminderDurationDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.beGoneIf
@@ -33,7 +34,6 @@ import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.formatMinutesToTimeString
 import org.fossify.commons.extensions.formatSecondsToTimeString
 import org.fossify.commons.extensions.getProperPrimaryColor
-import org.fossify.commons.extensions.showPickSecondsDialog
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.extensions.updateTextColors
 import org.fossify.commons.extensions.viewBinding
@@ -213,10 +213,9 @@ class SettingsActivity : SimpleActivity() {
     private fun setupAlarmMaxReminder() {
         updateAlarmMaxReminderText()
         binding.settingsAlarmMaxReminderHolder.setOnClickListener {
-            showPickSecondsDialog(
+            showReminderDurationDialog(
                 curSeconds = config.alarmMaxReminderSecs,
-                isSnoozePicker = true,
-                showSecondsAtCustomDialog = true
+                showSecondsForCustom = true
             ) {
                 config.alarmMaxReminderSecs = if (it != 0) it else DEFAULT_MAX_ALARM_REMINDER_SECS
                 updateAlarmMaxReminderText()
@@ -237,9 +236,8 @@ class SettingsActivity : SimpleActivity() {
     private fun setupSnoozeTime() {
         updateSnoozeText()
         binding.settingsSnoozeTimeHolder.setOnClickListener {
-            showPickSecondsDialog(
+            showReminderDurationDialog(
                 curSeconds = config.snoozeTime * MINUTE_SECONDS,
-                isSnoozePicker = true
             ) {
                 config.snoozeTime = it / MINUTE_SECONDS
                 updateSnoozeText()
@@ -250,10 +248,9 @@ class SettingsActivity : SimpleActivity() {
     private fun setupTimerMaxReminder() {
         updateTimerMaxReminderText()
         binding.settingsTimerMaxReminderHolder.setOnClickListener {
-            showPickSecondsDialog(
+            showReminderDurationDialog(
                 curSeconds = config.timerMaxReminderSecs,
-                isSnoozePicker = true,
-                showSecondsAtCustomDialog = true
+                showSecondsForCustom = true
             ) {
                 config.timerMaxReminderSecs = if (it != 0) it else DEFAULT_MAX_TIMER_REMINDER_SECS
                 updateTimerMaxReminderText()

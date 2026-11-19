@@ -5,7 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import org.fossify.clock.extensions.alarmController
 import org.fossify.clock.extensions.config
 import org.fossify.clock.helpers.ALARM_ID
-import org.fossify.commons.extensions.showPickSecondsDialog
+import org.fossify.clock.ui.dialogs.showReminderDurationDialog
 import org.fossify.commons.helpers.MINUTE_SECONDS
 
 class SnoozeReminderActivity : AppCompatActivity() {
@@ -18,9 +18,8 @@ class SnoozeReminderActivity : AppCompatActivity() {
         }
 
         alarmController.silenceAlarm(alarmId)
-        showPickSecondsDialog(
+        showReminderDurationDialog(
             curSeconds = config.snoozeTime * MINUTE_SECONDS,
-            isSnoozePicker = true,
             cancelCallback = {
                 alarmController.stopAlarm(alarmId)
                 dialogCancelled()

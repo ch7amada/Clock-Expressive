@@ -17,8 +17,8 @@ import org.fossify.clock.helpers.getPassedSeconds
 import org.fossify.clock.models.Alarm
 import org.fossify.clock.models.AlarmEvent
 import org.fossify.clock.ui.alarm.RingingAlarmScreen
+import org.fossify.clock.ui.dialogs.showReminderDurationDialog
 import org.fossify.clock.ui.theme.ClockTheme
-import org.fossify.commons.extensions.showPickSecondsDialog
 import org.fossify.commons.helpers.MINUTE_SECONDS
 import org.fossify.commons.helpers.isOreoMr1Plus
 import org.greenrobot.eventbus.EventBus
@@ -102,9 +102,8 @@ class AlarmActivity : SimpleActivity() {
         } else {
             snoozePickerOpen = true
             alarmController.silenceAlarm(alarmId)
-            showPickSecondsDialog(
+            showReminderDurationDialog(
                 curSeconds = config.snoozeTime * MINUTE_SECONDS,
-                isSnoozePicker = true,
                 cancelCallback = {
                     dismissAlarmAndFinish()
                 },
