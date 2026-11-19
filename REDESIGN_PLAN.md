@@ -32,7 +32,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Compose foundation — catalog, root/module Gradle, and new `ui/theme/ClockTheme.kt`. Pin approved Material 3 1.5.0-beta02 and verify Compose and Views build together.
 - [ ] Latest-alpha upgrade — adopt Material 3 1.6.0-alpha01 and Compose BOM 2026.11.01 when Google Maven serves both, then verify resolved dependencies and component behavior.
 - [~] Main shell — `MainActivity.kt`, `activity_main.xml`, and `ViewPagerAdapter.kt`. Keep page swipe, starting tab, extras, shortcuts, reselection, tab-specific sort menu and sound results. Use compact `ShortNavigationBar` with an inset background and selection indicator, preserving tab labels. Keep Info and Settings reachable.
-- [ ] Alarm time picker — `MyTimePickerDialogDialog.kt`. Use the verified analog and keyboard pickers with existing initialized time, clock format, validation and cancel contract.
+- [ ] Alarm time picker — `EditAlarmDialog.kt` and a new Compose time picker host. Replace both existing theme-dependent picker paths, preserving initialized hour/minute, clock format, validation and cancel contract.
 - [ ] Alarm editor — `EditAlarmDialog.kt`. Lead with selected time and group weekday toggles, label, sound, vibration and reminder options; retain add/edit/delete and scheduling callbacks.
 - [ ] Alarm sort — `ChangeAlarmSortDialog.kt`. Use tonal radio rows for existing sort choices and direction without changing persisted sort values.
 - [ ] Alarm list — `AlarmFragment.kt` and `AlarmsAdapter.kt`. Group alarm time and recurrence in tonal rows with accessible switches, keep selection, add, edit, bulk actions and permission flows.
@@ -40,6 +40,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [ ] Zone editor — `EditTimeZoneDialog.kt`. Preserve label edits, cancellation and deletion behavior.
 - [ ] World clock — `ClockFragment.kt`, `TimeZonesAdapter.kt`, and clock readout views. Feature the local time and next alarm, with date, UTC offsets and zone times in supporting tonal rows. Preserve tick cadence, 12/24-hour format and zone ordering.
 - [ ] Stopwatch — `StopwatchFragment.kt` and `StopwatchAdapter.kt`. Pair a high-contrast time readout with expressive Start/Pause and Lap/Reset controls. Preserve timing, service binding, lap deltas, ordering and landscape access.
+- [ ] Timer duration picker — `MyTimePickerDialogDialog.kt` and its layout. Preserve hours 0–23 and minutes/seconds 0–59, initial selection and confirm-only callback. Support localized numeric input and touch adjustment.
 - [ ] Timer editor — `EditTimerDialog.kt`. Group duration picker, label and sound in a scrollable form with existing input ranges and save semantics.
 - [ ] Timer sort — `ChangeTimerSortDialog.kt`. Retain sort keys and commit timing.
 - [ ] Timers — `TimerFragment.kt` and `TimerAdapter.kt`. Use a determinate wavy indicator for the active timer, with non-motion status and accessible controls. Preserve event updates, start/pause/reset, sorting, edit/delete and permission handling.
