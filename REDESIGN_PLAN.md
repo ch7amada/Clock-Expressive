@@ -58,7 +58,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Permission and first-alarm prompts — use Expressive app-owned message surfaces for permission explanations and the one-time alarm confirmation, preserving Android permission and Settings actions.
 - [x] Alarm switch preference — apply the existing Fossify checked-thumb icon preference to the Compose Alarm list as well as Settings.
 - [x] Shared Fossify UI audit and follow-through — audit dependency-owned About, appearance customization, and color picker boundaries. Preserve suite-wide functionality and document any retained upstream View content.
-- [~] Timer reset interaction guard — keep controls from submitting Pause against a stale Running row while a user-initiated Reset is awaiting its state refresh.
+- [x] Timer reset interaction guard — keep controls from submitting Pause against a stale Running row while a user-initiated Reset is awaiting its state refresh.
 - [ ] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
 
 ## Platform and Fossify Commons surfaces
@@ -84,7 +84,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Stopwatch `bb16bf33` — verified elapsed display, lap recording and sorts, scroll reset, start/pause/resume/reset, orientation, and shortcut routes on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Timer duration picker `3134ca55` — verified wheel and keypad, 23:59:59 and zero boundaries, existing ten-second fallback, all dismissal paths, and compact IME actions. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Timer editor `6bd02782` — verified edit/new, duration confirmation and cancel, labels and keyboard, sound and vibration, saved defaults and ACTION_SET_TIMER through the running state. Foss debug assembled. Unit tests reported `NO-SOURCE`.
-- Timers `7d909121` — verified countdown states, permissions, multi-select/delete, custom drag order, sorting and warm/cold timer jumps on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`. Rapid Reset then Pause can hit an unsafe cast in the unchanged timer controller before the Room refresh.
+- Timers `7d909121` — verified countdown states, permissions, multi-select/delete, custom drag order, sorting and warm/cold timer jumps on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`. Rapid Reset then Pause exposed a stale-control interaction, addressed by the later reset guard.
 - Compose pager `0539dec0` — verified tab swipes in LTR/RTL, rotation, process restoration with stable controller identities, cold/warm shortcuts and jumps, sort/menu routes and audio result forwarding on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Ringing alarm `8131debc` — verified actual alarm wakeup, partial swipe spring return, guide fade, swipe and accessible actions, rotation, notification dismissal and explicit snooze intents on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Snooze and reminders `45b6df98` — verified preset/current selection, custom units and bounds, cancellation and exactly one snooze through both reminder entry points on emulator. Custom Cancel returns to presets. Foss debug assembled. Unit tests reported `NO-SOURCE`.
@@ -97,3 +97,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Sound chooser `e92490e8` — verified system/custom alarm-stream previews, release on exit, actual file picker results, persisted grants, cancellation, and custom sound deletion and fallback on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Permission and alarm prompts `333d720e` — verified first-use warning confirmation/cancel through list and editor, and denied notification permission actions through the timer intent on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Switch appearance `3d35190d` — verified Alarm and Settings checked-thumb preference refresh in live activities, accessibility nodes and unchanged toggle writes. Foss debug assembled. Unit tests reported `NO-SOURCE`.
+- Timer reset guard `6edb309f` — verified immediate Reset/Pause/duplicate Reset, recovery to Idle, one-shot removal and valid Start/Pause/Resume actions on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
