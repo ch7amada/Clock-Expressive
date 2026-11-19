@@ -110,8 +110,8 @@ The user found the Compose migration visually improved but too close to standard
 - [x] World Clock — a large local time composition with asymmetric nested shapes, distinct time/date hierarchy, and supporting next-alarm and zone regions.
 - [x] Alarm — emphasize the next occurrence and make enabled, disabled and selected alarms visually distinct. Preserve reorder, switch and contextual actions.
 - [x] Timer — distinguish running countdowns from idle presets through placement, shape and determinate progress. Keep timer ordering and controls intact.
-- [~] Navigation shell — emphasize the current tab and put its utility actions in an Expressive floating toolbar.
-- [ ] Ringing alarm — carry the alarm ticket and connected shapes into the full-screen interruption.
+- [x] Navigation shell — emphasize the current tab and put its utility actions in an Expressive floating toolbar.
+- [~] Ringing alarm — carry the alarm ticket and connected shapes into the full-screen interruption.
 - [ ] Editors — carry the time and duration visual hierarchy and connected actions into the alarm and timer forms.
 - [ ] Settings — build stronger section hierarchy and use distinct nested shapes across preference groups.
 
@@ -119,3 +119,4 @@ The user found the Compose migration visually improved but too close to standard
 - World Clock visual pass `f33afe20` — verified light/dark hierarchy, RTL, compact large type, time semantics and zone operations on API 37. Foss debug and lint passed.
 - Alarm visual pass `d228cd55` — verified next-occurrence hierarchy, switch and add/edit actions, drag persistence, and compact 200% font layout on API 37. Foss debug and lint passed.
 - Timer visual pass `4c4d99cf` — verified running/paused/idle, persistent reorder, compact large type, and offscreen timer link on API 37. Foss debug and lint passed.
+- Navigation visual pass `987a800b` — verified contextual floating toolbar, sort and menu, all tabs and swipes, Arabic RTL and 200% compact layout. Foss debug and lint passed.
