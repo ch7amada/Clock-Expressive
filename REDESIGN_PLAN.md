@@ -43,7 +43,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Stopwatch — `StopwatchFragment.kt` and `StopwatchAdapter.kt`. Pair a high-contrast time readout with expressive Start/Pause and Lap/Reset controls. Preserve timing, service binding, lap deltas, ordering and landscape access.
 - [x] Timer duration picker — `MyTimePickerDialogDialog.kt` and its layout. Preserve hours 0–23 and minutes/seconds 0–59, initial selection and confirm-only callback. Support localized numeric input and touch adjustment.
 - [x] Timer editor — `EditTimerDialog.kt`. Group duration picker, label and sound in a scrollable form with existing input ranges and save semantics.
-- [ ] Timers — `TimerFragment.kt` and `TimerAdapter.kt`. Use a determinate wavy indicator for the active timer, with non-motion status and accessible controls. Preserve event updates, start/pause/reset, sorting, edit/delete and permission handling.
+- [~] Timers — `TimerFragment.kt` and `TimerAdapter.kt`. Use a determinate wavy indicator for the active timer, with non-motion status and accessible controls. Preserve event updates, start/pause/reset, sorting, edit/delete and permission handling.
 - [ ] Ringing alarm — `AlarmActivity.kt` and `activity_alarm.xml`. Feature the alarm label and time, with spring-return drag feedback and TalkBack-accessible snooze/dismiss actions. Preserve lock-screen flags, thresholds, haptics and exactly-once dispatch.
 - [ ] Snooze reminder — `SnoozeReminderActivity.kt` and its duration dialog call sites. Use grouped duration choices with the original range and timing.
 - [ ] Alarm intent selector — `SelectAlarmDialog.kt` and `IntentHandlerActivity.kt` UI call site. Preserve dismiss alarm matching, selection and finish behavior.
