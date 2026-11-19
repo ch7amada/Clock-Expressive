@@ -55,3 +55,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 
 - Plan commit `e61cbd17` — design system, migration sequence and acceptance criteria.
 - Baseline `4f2b697d` — initial branch audit and plan. Compose foundation awaits publication verification.
+- Baseline verification — `:app:assembleFossDebug` passed with the Android Studio JDK and SDK Platform 36. `:app:testFossDebugUnitTest` reported `NO-SOURCE`. Luna independently reproduced the latest BOM and Material 3 HTTP 404 responses. Foundation remains pending. No device visual verification has been performed.
