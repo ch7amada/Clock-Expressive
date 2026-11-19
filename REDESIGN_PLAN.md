@@ -57,8 +57,14 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Alarm and timer sound chooser — migrate the app call sites to a Compose chooser while reusing Fossify sound lookup and preserving preview, custom-file permission/result, recent sounds and deletion callbacks.
 - [x] Permission and first-alarm prompts — use Expressive app-owned message surfaces for permission explanations and the one-time alarm confirmation, preserving Android permission and Settings actions.
 - [~] Alarm switch preference — apply the existing Fossify checked-thumb icon preference to the Compose Alarm list as well as Settings.
-- [ ] Shared Fossify UI audit and follow-through — audit dependency-owned About, appearance customization, and color picker boundaries. Preserve suite-wide functionality and document any retained upstream View content.
+- [x] Shared Fossify UI audit and follow-through — audit dependency-owned About, appearance customization, and color picker boundaries. Preserve suite-wide functionality and document any retained upstream View content.
 - [ ] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
+
+## Platform and Fossify Commons surfaces
+
+- The launcher hosts the analogue and digital clock widgets through Android `RemoteViews`. Their platform clock views supply live time in the launcher. Both app-controlled configuration activities use Compose. Android also owns runtime permission prompts, the document picker, and the launch splash.
+- Commons 7.1.3 already uses Compose in its About, FAQ, and license activities. Clock preserves those suite destinations and their navigation contracts. [About](https://github.com/FossifyOrg/Commons/blob/7.1.3/commons/src/main/kotlin/org/fossify/commons/activities/AboutActivity.kt) · [FAQ](https://github.com/FossifyOrg/Commons/blob/7.1.3/commons/src/main/kotlin/org/fossify/commons/activities/FAQActivity.kt) · [Licenses](https://github.com/FossifyOrg/Commons/blob/7.1.3/commons/src/main/kotlin/org/fossify/commons/activities/LicenseActivity.kt)
+- Commons still owns the View-based Customize appearance activity and its cross-app theme, font, and icon synchronization. The widget color-picker component uses a Compose dialog around Commons' internal View-based HSV editor. These upstream surfaces retain their existing implementations so Clock continues to use the suite's shared preferences and behavior. [Customize appearance](https://github.com/FossifyOrg/Commons/blob/7.1.3/commons/src/main/kotlin/org/fossify/commons/activities/CustomizationActivity.kt) · [Widget color picker](https://github.com/FossifyOrg/Commons/blob/7.1.3/commons/src/main/kotlin/org/fossify/commons/dialogs/ColorPickerDialog.kt)
 
 ## Changelog
 
