@@ -109,9 +109,13 @@ The user found the Compose migration visually improved but too close to standard
 - [x] Stopwatch — an asymmetric, oversized timing face with a connected control cluster. Running changes the silhouette and tonal role, and the lap table reads as a distinct timing history.
 - [x] World Clock — a large local time composition with asymmetric nested shapes, distinct time/date hierarchy, and supporting next-alarm and zone regions.
 - [x] Alarm — emphasize the next occurrence and make enabled, disabled and selected alarms visually distinct. Preserve reorder, switch and contextual actions.
-- [~] Timer — distinguish running countdowns from idle presets through placement, shape and determinate progress. Keep timer ordering and controls intact.
-- [ ] Shell and supporting flows — carry the same shape, typography and motion decisions into navigation, the ringing alarm, editors and Settings.
+- [x] Timer — distinguish running countdowns from idle presets through placement, shape and determinate progress. Keep timer ordering and controls intact.
+- [~] Navigation shell — emphasize the current tab and put its utility actions in an Expressive floating toolbar.
+- [ ] Ringing alarm — carry the alarm ticket and connected shapes into the full-screen interruption.
+- [ ] Editors — carry the time and duration visual hierarchy and connected actions into the alarm and timer forms.
+- [ ] Settings — build stronger section hierarchy and use distinct nested shapes across preference groups.
 
 - Stopwatch visual pass `1e99f7a8` — verified stopped, running and paused states, connected actions, lap/sort/reset and compact landscape on API 37. Foss debug and lint passed.
 - World Clock visual pass `f33afe20` — verified light/dark hierarchy, RTL, compact large type, time semantics and zone operations on API 37. Foss debug and lint passed.
 - Alarm visual pass `d228cd55` — verified next-occurrence hierarchy, switch and add/edit actions, drag persistence, and compact 200% font layout on API 37. Foss debug and lint passed.
+- Timer visual pass `4c4d99cf` — verified running/paused/idle, persistent reorder, compact large type, and offscreen timer link on API 37. Foss debug and lint passed.
