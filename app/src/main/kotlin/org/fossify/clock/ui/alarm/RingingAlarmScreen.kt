@@ -26,14 +26,18 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +51,10 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -63,12 +71,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.graphics.shapes.Morph
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.fossify.clock.R
 import org.fossify.commons.R as CommonsR
 import org.fossify.commons.extensions.performHapticFeedback
+import kotlin.math.abs
 
 private const val DragActionThresholdPx = 50f
 private const val SwipeGuideDurationMillis = 2_000L
@@ -109,7 +119,7 @@ fun RingingAlarmScreen(
             } else {
                 Column(
                     modifier = contentModifier,
-                    verticalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterVertically),
+                    verticalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterVertically),
                 ) {
                     AlarmTimeCard(label, time, Modifier.fillMaxWidth())
                     RingingAlarmActions(actionsEnabled, onSnooze, onDismiss, Modifier.fillMaxWidth())
@@ -123,26 +133,32 @@ fun RingingAlarmScreen(
 private fun AlarmTimeCard(label: String, time: String, modifier: Modifier) {
     Surface(
         modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(topStart = 56.dp, topEnd = 24.dp, bottomEnd = 52.dp, bottomStart = 16.dp),
+        color = MaterialTheme.colorScheme.tertiary,
+        contentColor = MaterialTheme.colorScheme.onTertiary,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 212.dp)
+                .padding(horizontal = 28.dp, vertical = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
         ) {
-            val timeStyle = MaterialTheme.typography.displayLargeEmphasized.copy(fontFeatureSettings = "tnum")
+            val timeStyle = MaterialTheme.typography.displayLargeEmphasized.copy(
+                fontSize = 88.sp,
+                lineHeight = 96.sp,
+                fontFeatureSettings = "tnum",
+            )
             Text(
                 text = time,
                 style = timeStyle,
-                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = timeStyle.fontSize),
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.headlineSmallEmphasized,
-                textAlign = TextAlign.Center,
             )
         }
     }
@@ -177,7 +193,7 @@ private fun RingingAlarmActions(
         AlarmSwipeTrack(enabled, guide, { guideRequest++ }, onSnooze, onDismiss)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // Keep the physical action placement consistent with the translated swipe guide.
             val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -186,6 +202,7 @@ private fun RingingAlarmActions(
                 onClick = if (rtl) onDismiss else onSnooze,
                 enabled = enabled,
                 emphasized = rtl,
+                leading = true,
                 modifier = Modifier.weight(1f),
             )
             AlarmActionButton(
@@ -193,6 +210,7 @@ private fun RingingAlarmActions(
                 onClick = if (rtl) onSnooze else onDismiss,
                 enabled = enabled,
                 emphasized = !rtl,
+                leading = false,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -217,13 +235,19 @@ private fun AlarmActionButton(
     onClick: () -> Unit,
     enabled: Boolean,
     emphasized: Boolean,
+    leading: Boolean,
     modifier: Modifier,
 ) {
+    val start = if (leading) 28.dp else 6.dp
+    val end = if (leading) 6.dp else 28.dp
     Button(
-        shapes = ButtonDefaults.shapes(),
+        shapes = ButtonDefaults.shapes(
+            shape = RoundedCornerShape(topStart = start, bottomStart = start, topEnd = end, bottomEnd = end),
+            pressedShape = RoundedCornerShape(12.dp),
+        ),
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = 48.dp),
+        modifier = modifier.defaultMinSize(minHeight = 52.dp),
         colors = if (emphasized) {
             ButtonDefaults.buttonColors()
         } else {
@@ -234,6 +258,7 @@ private fun AlarmActionButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AlarmSwipeTrack(
     enabled: Boolean,
@@ -248,6 +273,8 @@ private fun AlarmSwipeTrack(
     var progress by remember { mutableFloatStateOf(0f) }
     var returnJob by remember { mutableStateOf<Job?>(null) }
     var dragDispatched by remember { mutableStateOf(false) }
+    val handleMorph = remember { Morph(MaterialShapes.Cookie9Sided, MaterialShapes.Circle) }
+    val handleColor = MaterialTheme.colorScheme.primary
 
     BoxWithConstraints(
         modifier = Modifier
@@ -306,23 +333,31 @@ private fun AlarmSwipeTrack(
                     },
                 ),
         ) {
-            Surface(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { translationX = progress * travelPx }
-                    .clip(CircleShape)
+                    .drawWithCache {
+                        val path = Path()
+                        val scale = Matrix().apply { scale(x = size.width, y = size.height) }
+                        onDrawWithContent {
+                            handleMorph.toPath(abs(progress), path)
+                            path.transform(scale)
+                            path.translate(center - path.getBounds().center)
+                            drawPath(path, handleColor)
+                            clipPath(path) { this@onDrawWithContent.drawContent() }
+                        }
+                    }
                     .clickable(enabled = enabled, role = Role.Button, onClick = onIncomplete)
                     .semantics { contentDescription = guide },
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_alarm_vector),
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
+                Icon(
+                    painter = painterResource(R.drawable.ic_alarm_vector),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
             }
         }
     }
