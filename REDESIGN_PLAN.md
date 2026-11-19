@@ -147,3 +147,9 @@ Launcher widget implementation. Use an original asymmetric digital capsule with 
 - Use Google Clock as the reference for layout, typography and how the widgets sit on the launcher. Use original artwork and a distinct composition. Check digital and analogue placement from the real launcher, including that Add opens no configuration screen.
 
 - System-only widgets `59ca2382` — verified on the API 37 launcher that both variants add directly, show live time and respond to system light/dark, and that tapping the analogue widget opens the app. The analogue hands stay inside the tick ring. Both debug builds and lint passed against the existing baseline. Wallpaper changes, resizing and the older-platform fallback were not exercised end to end.
+
+### Launcher system palette follow-up
+
+- [x] Correct the reported system-color mismatch. Verify both existing widgets respond to a distinct Android palette change with Clock closed, preserving system light/dark and the existing widget layout and behavior.
+
+- Widget palette `10adb101` — both widgets switched between blue and magenta wallpaper palettes with Clock closed on API 37 and followed system light/dark. Both debug builds and lints passed. Older Android color fallbacks were not exercised on a device.
