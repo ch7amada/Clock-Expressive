@@ -1,1 +1,1 @@
-Handy, lightweight, open-source clock app with essential features.
+Offline clock, alarms, stopwatch, and timers with Material 3 Expressive.

@@ -1,0 +1,3 @@
+• Adds an About page with project links, licenses, and credit to Fossify Clock.
+• Uses a separate Android app ID so Clock Expressive can be installed alongside Fossify Clock.
+• Removes the inherited Fossify startup warning.

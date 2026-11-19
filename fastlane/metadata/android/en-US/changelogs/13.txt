@@ -1,0 +1,1 @@
+Updates the store listing with the Clock Expressive name, icon, and screenshots.
