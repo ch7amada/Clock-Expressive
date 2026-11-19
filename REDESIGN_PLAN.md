@@ -59,7 +59,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Alarm switch preference — apply the existing Fossify checked-thumb icon preference to the Compose Alarm list as well as Settings.
 - [x] Shared Fossify UI audit and follow-through — audit dependency-owned About, appearance customization, and color picker boundaries. Preserve suite-wide functionality and document any retained upstream View content.
 - [x] Timer reset interaction guard — keep controls from submitting Pause against a stale Running row while a user-initiated Reset is awaiting its state refresh.
-- [ ] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
+- [~] Final legacy cleanup and parity — remove orphaned app-owned layouts, adapters, binding and UI dependencies after caller inventory. Smoke test launcher, shortcuts, intents, notifications, widget host, all pages and settings with existing persisted data.
 
 ## Platform and Fossify Commons surfaces
 
