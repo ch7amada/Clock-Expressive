@@ -112,8 +112,8 @@ The user found the Compose migration visually improved but too close to standard
 - [x] Timer — distinguish running countdowns from idle presets through placement, shape and determinate progress. Keep timer ordering and controls intact.
 - [x] Navigation shell — emphasize the current tab and put its utility actions in an Expressive floating toolbar.
 - [x] Ringing alarm — carry the alarm ticket and connected shapes into the full-screen interruption.
-- [~] Editors — carry the time and duration visual hierarchy and connected actions into the alarm and timer forms.
-- [ ] Settings — build stronger section hierarchy and use distinct nested shapes across preference groups.
+- [x] Editors — carry the time and duration visual hierarchy and connected actions into the alarm and timer forms.
+- [~] Settings — build stronger section hierarchy and use distinct nested shapes across preference groups.
 
 - Stopwatch visual pass `1e99f7a8` — verified stopped, running and paused states, connected actions, lap/sort/reset and compact landscape on API 37. Foss debug and lint passed.
 - World Clock visual pass `f33afe20` — verified light/dark hierarchy, RTL, compact large type, time semantics and zone operations on API 37. Foss debug and lint passed.
@@ -121,3 +121,4 @@ The user found the Compose migration visually improved but too close to standard
 - Timer visual pass `4c4d99cf` — verified running/paused/idle, persistent reorder, compact large type, and offscreen timer link on API 37. Foss debug and lint passed.
 - Navigation visual pass `987a800b` — verified contextual floating toolbar, sort and menu, all tabs and swipes, Arabic RTL and 200% compact layout. Foss debug and lint passed.
 - Ringing visual pass `7a453b66` — verified MaterialShapes Cookie9Sided-to-circle motion, connected actions, spring return and compact type on API 37. Foss debug and lint passed.
+- Editor visual pass `9faf2d5f` — verified both initialized picker routes, cancellation, and pinned connected actions with large type and the landscape keyboard. Foss debug and lint passed.
