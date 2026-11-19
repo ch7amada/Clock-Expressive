@@ -3,6 +3,7 @@
     android:id="@+id/widget_date_time_holder"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:theme="@style/WidgetTheme"
     android:padding="6dp">
 
     <AnalogClock

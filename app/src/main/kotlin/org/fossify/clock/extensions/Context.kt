@@ -299,10 +299,9 @@ fun Context.updateDigitalWidgets() {
         ?.getAppWidgetIds(component) ?: return
 
     if (widgetIds.isNotEmpty()) {
-        val ids = intArrayOf(R.xml.widget_digital_clock_info)
         Intent(applicationContext, MyDigitalTimeWidgetProvider::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
             sendBroadcast(this)
         }
     }
@@ -314,10 +313,9 @@ fun Context.updateAnalogueWidgets() {
         ?.getAppWidgetIds(component) ?: return
 
     if (widgetIds.isNotEmpty()) {
-        val ids = intArrayOf(R.xml.widget_analogue_clock_info)
         Intent(applicationContext, MyAnalogueTimeWidgetProvider::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
             sendBroadcast(this)
         }
     }
