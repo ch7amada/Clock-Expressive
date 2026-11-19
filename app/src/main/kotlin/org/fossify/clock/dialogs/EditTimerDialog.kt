@@ -1,111 +1,156 @@
 package org.fossify.clock.dialogs
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.media.AudioManager
 import android.media.RingtoneManager
-import androidx.appcompat.app.AlertDialog
+import android.os.Build
+import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.activity.ComponentDialog
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import org.fossify.clock.activities.SimpleActivity
-import org.fossify.clock.databinding.DialogEditTimerBinding
-import org.fossify.clock.extensions.*
+import org.fossify.clock.extensions.checkAlarmsWithDeletedSoundUri
+import org.fossify.clock.extensions.config
+import org.fossify.clock.extensions.timerHelper
 import org.fossify.clock.helpers.PICK_AUDIO_FILE_INTENT_ID
 import org.fossify.clock.models.Timer
+import org.fossify.clock.ui.dialogs.TimerEditorContent
+import org.fossify.clock.ui.theme.ClockTheme
 import org.fossify.commons.dialogs.SelectAlarmSoundDialog
-import org.fossify.commons.extensions.*
+import org.fossify.commons.extensions.getDefaultAlarmSound
+import org.fossify.commons.extensions.getFormattedDuration
 import org.fossify.commons.models.AlarmSound
 
 class EditTimerDialog(val activity: SimpleActivity, val timer: Timer, val callback: (id: Long) -> Unit) {
-    private val binding = DialogEditTimerBinding.inflate(activity.layoutInflater)
-    private val textColor = activity.getProperTextColor()
+    private val dialog by lazy { ComponentDialog(activity, android.R.style.Theme_DeviceDefault_NoActionBar) }
+    private val lastConfig = if (timer.id == null) activity.config.timerLastConfig else null
+    private val label = TextFieldState(initialText = lastConfig?.label ?: timer.label)
+    private var seconds by mutableIntStateOf(lastConfig?.seconds ?: timer.seconds)
+    private var soundTitle by mutableStateOf(lastConfig?.soundTitle ?: timer.soundTitle)
+    private var soundUri = lastConfig?.soundUri ?: timer.soundUri
+    private var vibrate by mutableStateOf(lastConfig?.vibrate ?: timer.vibrate)
+    private var channelId = timer.channelId
+    private var saving by mutableStateOf(false)
 
     init {
-        restoreLastAlarm()
-        updateAlarmTime()
-
-        binding.apply {
-            editTimerInitialTime.colorCompoundDrawable(textColor)
-            editTimerInitialTime.text = timer.seconds.getFormattedDuration()
-            editTimerInitialTime.setTextColor(textColor)
-            editTimerInitialTime.setOnClickListener {
-                changeDuration(timer)
+        activity.runOnUiThread {
+            if (!activity.isFinishing && !activity.isDestroyed) {
+                showDialog()
             }
-
-            editTimerVibrateIcon.setColorFilter(textColor)
-            editTimerVibrate.isChecked = timer.vibrate
-            editTimerVibrate.setTextColor(textColor)
-            editTimerVibrateHolder.setOnClickListener {
-                editTimerVibrate.toggle()
-                timer.vibrate = editTimerVibrate.isChecked
-                timer.channelId = null
-            }
-
-            editTimerSound.colorCompoundDrawable(textColor)
-            editTimerSound.text = timer.soundTitle
-            editTimerSound.setOnClickListener {
-                SelectAlarmSoundDialog(activity, timer.soundUri, AudioManager.STREAM_ALARM, PICK_AUDIO_FILE_INTENT_ID,
-                    RingtoneManager.TYPE_ALARM, true,
-                    onAlarmPicked = { sound ->
-                        if (sound != null) {
-                            updateAlarmSound(sound)
-                        }
-                    },
-                    onAlarmSoundDeleted = { sound ->
-                        if (timer.soundUri == sound.uri) {
-                            val defaultAlarm = root.context.getDefaultAlarmSound(RingtoneManager.TYPE_ALARM)
-                            updateAlarmSound(defaultAlarm)
-                        }
-
-                        root.context.checkAlarmsWithDeletedSoundUri(sound.uri)
-                    })
-            }
-
-            editTimerLabelImage.applyColorFilter(textColor)
-            editTimer.setText(timer.label)
         }
+    }
 
-        activity.getAlertDialogBuilder()
-            .setPositiveButton(org.fossify.commons.R.string.ok, null)
-            .setNegativeButton(org.fossify.commons.R.string.cancel, null)
-            .apply {
-                activity.setupDialogStuff(binding.root, this) { alertDialog ->
-                    alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                        timer.label = binding.editTimer.value
-                        activity.timerHelper.insertOrUpdateTimer(timer) {
-                            activity.config.timerLastConfig = timer
-                            callback(it)
-                            alertDialog.dismiss()
-                        }
-                    }
+    private fun showDialog() {
+        val dismissOnDestroy = object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                dialog.dismiss()
+            }
+        }
+        activity.lifecycle.addObserver(dismissOnDestroy)
+        dialog.setOnDismissListener { activity.lifecycle.removeObserver(dismissOnDestroy) }
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            WindowCompat.setDecorFitsSystemWindows(this, false)
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setDimAmount(0.32f)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                attributes = attributes.apply { setFitInsetsTypes(0) }
+            }
+            @Suppress("DEPRECATION")
+            setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                    } else {
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                    },
+            )
+        }
+        dialog.setContentView(ComposeView(dialog.context).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                ClockTheme {
+                    TimerEditorContent(
+                        duration = seconds.getFormattedDuration(),
+                        label = label,
+                        soundTitle = soundTitle,
+                        vibrate = vibrate,
+                        saving = saving,
+                        onDurationClick = ::openDurationPicker,
+                        onSoundClick = ::openSoundPicker,
+                        onVibrateChange = {
+                            vibrate = it
+                            channelId = null
+                        },
+                        onCancel = { if (!saving) dialog.dismiss() },
+                        onConfirm = ::saveTimer,
+                    )
                 }
             }
+        })
+        dialog.show()
+        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
     }
 
-    private fun restoreLastAlarm() {
-        if (timer.id == null) {
-            activity.config.timerLastConfig?.let { lastConfig ->
-                timer.label = lastConfig.label
-                timer.seconds = lastConfig.seconds
-                timer.soundTitle = lastConfig.soundTitle
-                timer.soundUri = lastConfig.soundUri
-                timer.vibrate = lastConfig.vibrate
-            }
+    private fun openDurationPicker() {
+        MyTimePickerDialogDialog(activity, seconds) { selectedSeconds ->
+            seconds = if (selectedSeconds <= 0) 10 else selectedSeconds
         }
     }
 
-    private fun updateAlarmTime() {
-        binding.editTimerInitialTime.text = activity.getFormattedTime(timer.seconds * 60, false, true)
-    }
-
-    private fun changeDuration(timer: Timer) {
-        MyTimePickerDialogDialog(activity, timer.seconds) { seconds ->
-            val timerSeconds = if (seconds <= 0) 10 else seconds
-            timer.seconds = timerSeconds
-            binding.editTimerInitialTime.text = timerSeconds.getFormattedDuration()
-        }
+    private fun openSoundPicker() {
+        SelectAlarmSoundDialog(
+            activity = activity,
+            currentUri = soundUri,
+            audioStream = AudioManager.STREAM_ALARM,
+            pickAudioIntentId = PICK_AUDIO_FILE_INTENT_ID,
+            type = RingtoneManager.TYPE_ALARM,
+            loopAudio = true,
+            onAlarmPicked = { if (it != null) updateAlarmSound(it) },
+            onAlarmSoundDeleted = {
+                if (soundUri == it.uri) {
+                    updateAlarmSound(activity.getDefaultAlarmSound(RingtoneManager.TYPE_ALARM))
+                }
+                activity.checkAlarmsWithDeletedSoundUri(it.uri)
+            },
+        )
     }
 
     fun updateAlarmSound(alarmSound: AlarmSound) {
-        timer.soundTitle = alarmSound.title
-        timer.soundUri = alarmSound.uri
-        timer.channelId = null
-        binding.editTimerSound.text = alarmSound.title
+        if (dialog.isShowing && !saving) {
+            soundTitle = alarmSound.title
+            soundUri = alarmSound.uri
+            channelId = null
+        }
+    }
+
+    private fun saveTimer() {
+        if (saving || !dialog.isShowing) return
+
+        saving = true
+        dialog.setCancelable(false)
+        timer.label = label.text.toString().trim()
+        timer.seconds = seconds
+        timer.vibrate = vibrate
+        timer.soundTitle = soundTitle
+        timer.soundUri = soundUri
+        timer.channelId = channelId
+        activity.timerHelper.insertOrUpdateTimer(timer) { id ->
+            activity.runOnUiThread {
+                activity.config.timerLastConfig = timer
+                callback(id)
+                dialog.dismiss()
+            }
+        }
     }
 }

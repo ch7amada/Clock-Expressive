@@ -9,24 +9,20 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -146,45 +142,12 @@ internal fun AlarmEditorContent(
                             lineLimits = TextFieldLineLimits.SingleLine,
                             shape = MaterialTheme.shapes.large,
                         )
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.large,
-                            color = colors.surfaceContainerHigh,
-                        ) {
-                            Column {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .clickable(role = Role.Button) {
-                                            focus.clearFocus()
-                                            onSoundClick()
-                                        }
-                                        .heightIn(min = 56.dp)
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(painterResource(CommonsR.drawable.ic_bell_vector), contentDescription = null)
-                                    Text(soundTitle, style = MaterialTheme.typography.bodyLarge)
-                                }
-                                HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .toggleable(value = vibrate, role = Role.Switch, onValueChange = onVibrateChange)
-                                        .heightIn(min = 56.dp)
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(painterResource(CommonsR.drawable.ic_vibrate_vector), contentDescription = null)
-                                    Text(
-                                        text = stringResource(R.string.vibrate),
-                                        modifier = Modifier.weight(1f),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                    )
-                                    Switch(checked = vibrate, onCheckedChange = null)
-                                }
-                            }
-                        }
+                        ReminderOptions(
+                            soundTitle = soundTitle,
+                            vibrate = vibrate,
+                            onSoundClick = onSoundClick,
+                            onVibrateChange = onVibrateChange,
+                        )
                     }
                     FlowRow(
                         modifier = Modifier.fillMaxWidth().padding(start = padding, end = padding, bottom = 8.dp),
