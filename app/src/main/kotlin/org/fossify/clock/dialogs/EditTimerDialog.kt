@@ -2,7 +2,6 @@ package org.fossify.clock.dialogs
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.media.AudioManager
 import android.media.RingtoneManager
 import android.os.Build
 import android.view.ViewGroup
@@ -22,11 +21,10 @@ import org.fossify.clock.activities.SimpleActivity
 import org.fossify.clock.extensions.checkAlarmsWithDeletedSoundUri
 import org.fossify.clock.extensions.config
 import org.fossify.clock.extensions.timerHelper
-import org.fossify.clock.helpers.PICK_AUDIO_FILE_INTENT_ID
 import org.fossify.clock.models.Timer
 import org.fossify.clock.ui.dialogs.TimerEditorContent
+import org.fossify.clock.ui.dialogs.showReminderSoundDialog
 import org.fossify.clock.ui.theme.ClockTheme
-import org.fossify.commons.dialogs.SelectAlarmSoundDialog
 import org.fossify.commons.extensions.getDefaultAlarmSound
 import org.fossify.commons.extensions.getFormattedDuration
 import org.fossify.commons.models.AlarmSound
@@ -109,14 +107,10 @@ class EditTimerDialog(val activity: SimpleActivity, val timer: Timer, val callba
     }
 
     private fun openSoundPicker() {
-        SelectAlarmSoundDialog(
+        showReminderSoundDialog(
             activity = activity,
             currentUri = soundUri,
-            audioStream = AudioManager.STREAM_ALARM,
-            pickAudioIntentId = PICK_AUDIO_FILE_INTENT_ID,
-            type = RingtoneManager.TYPE_ALARM,
-            loopAudio = true,
-            onAlarmPicked = { if (it != null) updateAlarmSound(it) },
+            onAlarmPicked = ::updateAlarmSound,
             onAlarmSoundDeleted = {
                 if (soundUri == it.uri) {
                     updateAlarmSound(activity.getDefaultAlarmSound(RingtoneManager.TYPE_ALARM))

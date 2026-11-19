@@ -2,7 +2,6 @@ package org.fossify.clock.dialogs
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.media.AudioManager
 import android.media.RingtoneManager
 import android.os.Build
 import android.view.ViewGroup
@@ -25,15 +24,14 @@ import org.fossify.clock.extensions.dbHelper
 import org.fossify.clock.extensions.getFormattedTime
 import org.fossify.clock.extensions.handleFullScreenNotificationsPermission
 import org.fossify.clock.extensions.rotateWeekdays
-import org.fossify.clock.helpers.PICK_AUDIO_FILE_INTENT_ID
 import org.fossify.clock.helpers.getCurrentDayMinutes
 import org.fossify.clock.helpers.updateNonRecurringAlarmDay
 import org.fossify.clock.models.Alarm
 import org.fossify.clock.ui.dialogs.AlarmEditorContent
 import org.fossify.clock.ui.dialogs.showAlarmTimePicker
+import org.fossify.clock.ui.dialogs.showReminderSoundDialog
 import org.fossify.clock.ui.theme.ClockTheme
 import org.fossify.commons.dialogs.ConfirmationDialog
-import org.fossify.commons.dialogs.SelectAlarmSoundDialog
 import org.fossify.commons.extensions.getDefaultAlarmSound
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.models.AlarmSound
@@ -156,14 +154,10 @@ class EditAlarmDialog(
     }
 
     private fun openSoundPicker() {
-        SelectAlarmSoundDialog(
+        showReminderSoundDialog(
             activity = activity,
             currentUri = alarm.soundUri,
-            audioStream = AudioManager.STREAM_ALARM,
-            pickAudioIntentId = PICK_AUDIO_FILE_INTENT_ID,
-            type = RingtoneManager.TYPE_ALARM,
-            loopAudio = true,
-            onAlarmPicked = { if (it != null) updateSelectedAlarmSound(it) },
+            onAlarmPicked = ::updateSelectedAlarmSound,
             onAlarmSoundDeleted = {
                 if (alarm.soundUri == it.uri) {
                     updateSelectedAlarmSound(activity.getDefaultAlarmSound(RingtoneManager.TYPE_ALARM))
