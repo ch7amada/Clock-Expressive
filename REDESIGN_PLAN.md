@@ -140,3 +140,8 @@ The user supplied two additional visual references. The first pairs a large viol
 Launcher widget implementation. Use an original asymmetric digital capsule with live platform TextClock digits and a separate date/next-alarm region. Give the analogue widget an original scalloped face and prominent hands, informed by the reference dial. Keep RemoteViews, provider identities, resize behavior, live time and app-open intent. Use Clock's palette resolver for defaults, preserve saved launcher color choices, and keep widget customization out of Settings. Use Android widget previews and confirm placement and resizing in a launcher. Implementation dispatched to GPT-6-Luna in a dedicated Codex worker thread.
 
 - Launcher widgets `5b021e6b` — implemented and reviewed using dedicated GPT-6-Luna workers. Both debug builds and lint passed. API 37 verified digital placement and saving without overriding automatic colors. Analogue placement and resizing were not exercised in this final smoke. Older launchers retain their existing static preview images.
+
+## System-only launcher widgets
+
+- [~] Remove launcher widget configuration and ignore app appearance and saved widget color overrides. Use Android system light/dark and wallpaper colors, preserving live time, orientation and resize behavior, provider IDs, tap-to-open, date and next alarm.
+- Use Google Clock as the reference for layout, typography and how the widgets sit on the launcher. Use original artwork and a distinct composition. Check digital and analogue placement from the real launcher, including that Add opens no configuration screen.
