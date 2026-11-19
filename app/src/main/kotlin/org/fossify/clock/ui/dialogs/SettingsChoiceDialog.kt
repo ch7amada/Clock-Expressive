@@ -36,6 +36,7 @@ internal fun SettingsChoiceDialog(
     selectedValue: Int,
     onDismiss: () -> Unit,
     onSelect: (Int) -> Unit,
+    trailingContent: (@Composable (Int) -> Unit)? = null,
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -78,7 +79,12 @@ internal fun SettingsChoiceDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             RadioButton(selected = selected, onClick = null)
-                            Text(stringResource(option.label), style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = stringResource(option.label),
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            trailingContent?.invoke(option.value)
                         }
                     }
                 }

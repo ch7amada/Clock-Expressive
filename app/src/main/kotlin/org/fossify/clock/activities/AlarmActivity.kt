@@ -53,7 +53,7 @@ class AlarmActivity : SimpleActivity() {
 
         EventBus.getDefault().register(this)
         setContent {
-            ClockTheme {
+            ClockTheme(window = window) {
                 RingingAlarmScreen(
                     label = label,
                     time = time,

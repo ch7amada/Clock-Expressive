@@ -145,7 +145,7 @@ class MainActivity : SimpleActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setupPager(savedInstanceState)
-        setContent { ClockTheme { MainScreen() } }
+        setContent { ClockTheme(window = window) { MainScreen() } }
         appLaunched(BuildConfig.APPLICATION_ID)
         // Commons pads the host horizontally for side navigation bars and cutouts.
         setupEdgeToEdge()

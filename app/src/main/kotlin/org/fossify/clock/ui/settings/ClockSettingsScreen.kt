@@ -1,12 +1,13 @@
 package org.fossify.clock.ui.settings
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -23,10 +24,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
@@ -57,6 +58,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.fossify.clock.R
+import org.fossify.clock.helpers.ClockAppearance
+import org.fossify.clock.helpers.ClockPalette
+import org.fossify.clock.helpers.ClockThemeMode
 import org.fossify.clock.helpers.TAB_ALARM
 import org.fossify.clock.helpers.TAB_CLOCK
 import org.fossify.clock.helpers.TAB_STOPWATCH
@@ -64,6 +68,8 @@ import org.fossify.clock.helpers.TAB_TIMER
 import org.fossify.clock.ui.components.ClockSwitch
 import org.fossify.clock.ui.dialogs.SettingsChoice
 import org.fossify.clock.ui.dialogs.SettingsChoiceDialog
+import org.fossify.clock.ui.theme.LocalClockAppearance
+import org.fossify.clock.ui.theme.clockColorScheme
 import org.fossify.commons.helpers.TAB_LAST_USED
 import java.time.DayOfWeek
 import org.fossify.commons.R as CommonsR
@@ -83,7 +89,26 @@ internal data class ClockSettingsState(
     val timerReminder: String,
 )
 
-private enum class ChoiceMenu { DefaultTab, FirstDayOfWeek }
+private enum class ChoiceMenu { Theme, Palette, DefaultTab, FirstDayOfWeek }
+
+private val ClockThemeMode.label: Int
+    get() = when (this) {
+        ClockThemeMode.System -> R.string.appearance_follow_system
+        ClockThemeMode.Dark -> CommonsR.string.dark_theme
+        ClockThemeMode.Light -> CommonsR.string.light_theme
+    }
+
+private val ClockPalette.label: Int
+    get() = when (this) {
+        ClockPalette.System -> R.string.appearance_follow_system
+        ClockPalette.Indigo -> R.string.appearance_palette_indigo
+        ClockPalette.Teal -> R.string.appearance_palette_teal
+        ClockPalette.Violet -> R.string.appearance_palette_violet
+        ClockPalette.Plum -> R.string.appearance_palette_plum
+    }
+
+private val ThemeChoices = ClockThemeMode.entries.map { SettingsChoice(it.ordinal, it.label) }
+private val PaletteChoices = ClockPalette.entries.map { SettingsChoice(it.ordinal, it.label) }
 
 private val DefaultTabChoices = listOf(
     SettingsChoice(TAB_CLOCK, R.string.clock),
@@ -107,8 +132,8 @@ private val FirstDayOfWeekChoices = listOf(
 internal fun ClockSettingsScreen(
     state: ClockSettingsState,
     onBack: () -> Unit,
-    onCustomizeColors: () -> Unit,
-    onCustomizeWidgetColors: () -> Unit,
+    onSelectTheme: (ClockThemeMode) -> Unit,
+    onSelectPalette: (ClockPalette) -> Unit,
     onPurchaseThankYou: () -> Unit,
     onChangeLanguage: () -> Unit,
     onUseEnglish: (Boolean) -> Unit,
@@ -126,6 +151,7 @@ internal fun ClockSettingsScreen(
 ) {
     var choiceMenu by rememberSaveable { mutableStateOf<ChoiceMenu?>(null) }
     val scrollState = rememberScrollState()
+    val appearance = LocalClockAppearance.current
     val colors = MaterialTheme.colorScheme
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -149,7 +175,11 @@ internal fun ClockSettingsScreen(
                     .padding(horizontal = gutter, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                AppearancePanel(onCustomizeColors, onCustomizeWidgetColors)
+                AppearancePanel(
+                    appearance = appearance,
+                    onChooseTheme = { choiceMenu = ChoiceMenu.Theme },
+                    onChoosePalette = { choiceMenu = ChoiceMenu.Palette },
+                )
                 SettingsSection(CommonsR.string.general_settings) {
                     if (state.showPurchaseThankYou) {
                         SettingsAction(
@@ -249,6 +279,21 @@ internal fun ClockSettingsScreen(
     }
 
     when (choiceMenu) {
+        ChoiceMenu.Theme -> SettingsChoiceDialog(
+            title = stringResource(R.string.appearance_theme),
+            options = ThemeChoices,
+            selectedValue = appearance.mode.ordinal,
+            onDismiss = { choiceMenu = null },
+            onSelect = { onSelectTheme(ClockThemeMode.entries[it]) },
+        )
+        ChoiceMenu.Palette -> SettingsChoiceDialog(
+            title = stringResource(R.string.appearance_color_palette),
+            options = PaletteChoices,
+            selectedValue = appearance.palette.ordinal,
+            onDismiss = { choiceMenu = null },
+            onSelect = { onSelectPalette(ClockPalette.entries[it]) },
+            trailingContent = { PaletteSwatches(ClockPalette.entries[it]) },
+        )
         ChoiceMenu.DefaultTab -> SettingsChoiceDialog(
             title = stringResource(CommonsR.string.default_tab_to_open),
             options = DefaultTabChoices,
@@ -330,7 +375,11 @@ private fun SettingsHeading(@StringRes title: Int, color: Color, emphasized: Boo
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AppearancePanel(onCustomizeColors: () -> Unit, onCustomizeWidgetColors: () -> Unit) {
+private fun AppearancePanel(
+    appearance: ClockAppearance,
+    onChooseTheme: () -> Unit,
+    onChoosePalette: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -356,35 +405,34 @@ private fun AppearancePanel(onCustomizeColors: () -> Unit, onCustomizeWidgetColo
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                AppearanceAction(CommonsR.string.customize_colors, first = true, onClick = onCustomizeColors)
-                AppearanceAction(CommonsR.string.customize_widget_colors, first = false, onClick = onCustomizeWidgetColors)
+                SettingsConnectedRow(colors.surfaceContainerLow, colors.onSurface, first = true) {
+                    SettingsAction(
+                        label = R.string.appearance_theme,
+                        summary = stringResource(appearance.mode.label),
+                        onClick = onChooseTheme,
+                    )
+                }
+                SettingsConnectedRow(colors.surfaceContainerLow, colors.onSurface, last = true) {
+                    SettingsAction(
+                        label = R.string.appearance_color_palette,
+                        summary = stringResource(appearance.palette.label),
+                        trailingContent = { PaletteSwatches(appearance.palette) },
+                        onClick = onChoosePalette,
+                    )
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AppearanceAction(@StringRes label: Int, first: Boolean, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Button(
-        onClick = onClick,
-        modifier = SettingsRowModifier,
-        shapes = ButtonDefaults.shapes(
-            shape = connectedSettingsShape(first = first, last = !first),
-            pressedShape = RoundedCornerShape(12.dp),
-        ),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = colors.primary,
-            contentColor = colors.onPrimary,
-        ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-    ) {
-        Text(
-            text = stringResource(label),
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.titleMediumEmphasized,
-        )
+private fun PaletteSwatches(palette: ClockPalette) {
+    val mode = LocalClockAppearance.current.mode
+    val scheme = LocalContext.current.clockColorScheme(palette, mode.isDark(isSystemInDarkTheme()))
+    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Box(Modifier.size(12.dp).background(scheme.primary, CircleShape))
+        Box(Modifier.size(12.dp).background(scheme.secondary, CircleShape))
+        Box(Modifier.size(12.dp).background(scheme.tertiary, CircleShape))
     }
 }
 
@@ -426,22 +474,27 @@ private fun SettingsAction(
     @StringRes label: Int,
     summary: String? = null,
     summaryColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    trailingContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    Column(
+    Row(
         modifier = SettingsRowModifier
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(stringResource(label), style = MaterialTheme.typography.titleMedium)
-        summary?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                color = summaryColor,
-            )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(label), style = MaterialTheme.typography.titleMedium)
+            summary?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = summaryColor,
+                )
+            }
         }
+        trailingContent?.invoke()
     }
 }
 

@@ -1,7 +1,6 @@
 package org.fossify.clock.activities
 
 import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -34,7 +33,6 @@ import org.fossify.commons.extensions.hasThankYouUnlock
 import org.fossify.commons.extensions.launchPurchaseThankYouIntent
 import org.fossify.commons.extensions.toast
 import org.fossify.commons.helpers.ExportResult
-import org.fossify.commons.helpers.IS_CUSTOMIZING_COLORS
 import org.fossify.commons.helpers.MINUTE_SECONDS
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.helpers.isTiramisuPlus
@@ -64,13 +62,19 @@ class SettingsActivity : SimpleActivity() {
         super.onCreate(savedInstanceState)
         refreshSettings()
         setContent {
-            ClockTheme {
+            ClockTheme(window = window) {
                 settings?.let { state ->
                     ClockSettingsScreen(
                         state = state,
                         onBack = ::finish,
-                        onCustomizeColors = { startCustomizationActivity() },
-                        onCustomizeWidgetColors = ::customizeWidgetColors,
+                        onSelectTheme = {
+                            config.themeMode = it
+                            updateWidgets()
+                        },
+                        onSelectPalette = {
+                            config.colorPalette = it
+                            updateWidgets()
+                        },
                         onPurchaseThankYou = { launchPurchaseThankYouIntent() },
                         onChangeLanguage = {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -168,13 +172,6 @@ class SettingsActivity : SimpleActivity() {
         ) {
             config.timerMaxReminderSecs = if (it != 0) it else DEFAULT_MAX_TIMER_REMINDER_SECS
             refreshSettings()
-        }
-    }
-
-    private fun customizeWidgetColors() {
-        Intent(this, WidgetDigitalConfigureActivity::class.java).apply {
-            putExtra(IS_CUSTOMIZING_COLORS, true)
-            startActivity(this)
         }
     }
 

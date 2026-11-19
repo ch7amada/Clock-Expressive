@@ -72,4 +72,11 @@
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res
     -->
 
+    <string name="appearance_theme">Theme</string>
+    <string name="appearance_color_palette">Color palette</string>
+    <string name="appearance_follow_system">Follow system</string>
+    <string name="appearance_palette_indigo">Indigo</string>
+    <string name="appearance_palette_teal">Teal</string>
+    <string name="appearance_palette_violet">Violet</string>
+    <string name="appearance_palette_plum">Plum</string>
 </resources>

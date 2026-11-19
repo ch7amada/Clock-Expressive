@@ -1,6 +1,7 @@
 package org.fossify.clock.helpers
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.media.RingtoneManager
 import androidx.core.content.edit
 import org.fossify.clock.extensions.gson.gson
@@ -15,7 +16,39 @@ import org.fossify.commons.helpers.SORT_DESCENDING
 
 class Config(context: Context) : BaseConfig(context) {
     companion object {
+        private const val APPEARANCE_PREFS = "clock_appearance"
+        private const val THEME_MODE = "theme_mode"
+        private const val COLOR_PALETTE = "color_palette"
+
         fun newInstance(context: Context) = Config(context)
+    }
+
+    private val appearancePrefs by lazy {
+        context.getSharedPreferences(APPEARANCE_PREFS, Context.MODE_PRIVATE)
+    }
+
+    var themeMode: ClockThemeMode
+        get() = appearancePrefs.getString(THEME_MODE, null).let { stored ->
+            ClockThemeMode.entries.firstOrNull { it.name == stored } ?: ClockThemeMode.System
+        }
+        set(mode) = appearancePrefs.edit { putString(THEME_MODE, mode.name) }
+
+    var colorPalette: ClockPalette
+        get() = appearancePrefs.getString(COLOR_PALETTE, null).let { stored ->
+            ClockPalette.entries.firstOrNull { it.name == stored } ?: ClockPalette.System
+        }
+        set(palette) = appearancePrefs.edit { putString(COLOR_PALETTE, palette.name) }
+
+    val appearance: ClockAppearance
+        get() = ClockAppearance(themeMode, colorPalette)
+
+    fun observeAppearance(onChange: (ClockAppearance) -> Unit): () -> Unit {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            onChange(appearance)
+        }
+        appearancePrefs.registerOnSharedPreferenceChangeListener(listener)
+        onChange(appearance)
+        return { appearancePrefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
     var selectedTimeZones: Set<String>

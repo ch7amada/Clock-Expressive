@@ -60,7 +60,7 @@ class WidgetDigitalConfigureActivity : SimpleActivity() {
             var textColor by rememberSaveable { mutableIntStateOf(initialTextColor) }
             val backgroundColor = background.adjustAlpha(alpha)
 
-            ClockTheme {
+            ClockTheme(window = window) {
                 WidgetAppearanceScreen(
                     backgroundColor = backgroundColor,
                     opaqueBackgroundColor = background,

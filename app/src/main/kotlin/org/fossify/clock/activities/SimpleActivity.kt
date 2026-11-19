@@ -5,6 +5,10 @@ import org.fossify.clock.helpers.REPOSITORY_NAME
 import org.fossify.commons.activities.BaseSimpleActivity
 
 open class SimpleActivity : BaseSimpleActivity() {
+    init {
+        useDynamicTheme = false
+    }
+
     override fun getAppIconIDs() = arrayListOf(
         R.mipmap.ic_launcher_red,
         R.mipmap.ic_launcher_pink,

@@ -49,7 +49,7 @@ class WidgetAnalogueConfigureActivity : SimpleActivity() {
             var opacity by rememberSaveable { mutableIntStateOf(initialOpacity) }
             val backgroundColor = background.adjustAlpha(alpha)
 
-            ClockTheme {
+            ClockTheme(window = window) {
                 WidgetAppearanceScreen(
                     backgroundColor = backgroundColor,
                     opaqueBackgroundColor = background,
