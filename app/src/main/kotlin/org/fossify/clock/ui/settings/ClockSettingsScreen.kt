@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
@@ -28,8 +27,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -54,6 +51,7 @@ import org.fossify.clock.helpers.TAB_ALARM
 import org.fossify.clock.helpers.TAB_CLOCK
 import org.fossify.clock.helpers.TAB_STOPWATCH
 import org.fossify.clock.helpers.TAB_TIMER
+import org.fossify.clock.ui.components.ClockSwitch
 import org.fossify.clock.ui.dialogs.SettingsChoice
 import org.fossify.clock.ui.dialogs.SettingsChoiceDialog
 import org.fossify.commons.helpers.TAB_LAST_USED
@@ -61,7 +59,6 @@ import java.time.DayOfWeek
 import org.fossify.commons.R as CommonsR
 
 internal data class ClockSettingsState(
-    val showSwitchCheckmarks: Boolean,
     val showPurchaseThankYou: Boolean,
     val language: String?,
     val useEnglish: Boolean?,
@@ -163,7 +160,6 @@ internal fun ClockSettingsScreen(
                         SettingsToggle(
                             CommonsR.string.use_english_language,
                             it,
-                            state.showSwitchCheckmarks,
                             onUseEnglish,
                         )
                         SettingsDivider()
@@ -171,7 +167,6 @@ internal fun ClockSettingsScreen(
                     SettingsToggle(
                         CommonsR.string.use_24_hour_time_format,
                         state.use24HourFormat,
-                        state.showSwitchCheckmarks,
                         onUse24HourFormat,
                     )
                     SettingsDivider()
@@ -190,7 +185,6 @@ internal fun ClockSettingsScreen(
                     SettingsToggle(
                         CommonsR.string.prevent_phone_from_sleeping,
                         state.keepAwake,
-                        state.showSwitchCheckmarks,
                         onKeepAwake,
                     )
                 }
@@ -200,14 +194,12 @@ internal fun ClockSettingsScreen(
                     SettingsToggle(
                         R.string.increase_volume_gradually,
                         state.increaseVolume,
-                        state.showSwitchCheckmarks,
                         onIncreaseVolume,
                     )
                     SettingsDivider()
                     SettingsToggle(
                         CommonsR.string.use_same_snooze,
                         state.useSameSnooze,
-                        state.showSwitchCheckmarks,
                         onUseSameSnooze,
                     )
                     if (state.useSameSnooze) {
@@ -331,7 +323,6 @@ private fun SettingsAction(@StringRes label: Int, summary: String? = null, onCli
 private fun SettingsToggle(
     @StringRes label: Int,
     checked: Boolean,
-    showCheckmark: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
@@ -342,17 +333,6 @@ private fun SettingsToggle(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(stringResource(label), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-        val checkmark: @Composable (() -> Unit)? = if (checked && showCheckmark) {
-            {
-                Icon(
-                    painter = painterResource(CommonsR.drawable.ic_check_vector),
-                    contentDescription = null,
-                    modifier = Modifier.size(SwitchDefaults.IconSize),
-                )
-            }
-        } else {
-            null
-        }
-        Switch(checked = checked, onCheckedChange = null, thumbContent = checkmark)
+        ClockSwitch(checked = checked, onCheckedChange = null)
     }
 }

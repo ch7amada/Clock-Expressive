@@ -15,6 +15,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +39,8 @@ import org.fossify.commons.extensions.isCredentialStorageAvailable
 import org.fossify.commons.helpers.FONT_TYPE_CUSTOM
 import org.fossify.commons.helpers.FONT_TYPE_MONOSPACE
 import org.fossify.commons.helpers.FontHelper
+
+internal val LocalShowSwitchCheckmarks = compositionLocalOf { false }
 
 private val ClockShapes = Shapes(
     medium = RoundedCornerShape(12.dp),
@@ -61,12 +65,16 @@ fun ClockTheme(content: @Composable () -> Unit) {
     var fontFamily by remember(context, preview) {
         mutableStateOf(if (preview) null else context.clockFontFamily())
     }
+    var showSwitchCheckmarks by remember(context, preview) {
+        mutableStateOf(!preview && context.isCredentialStorageAvailable && context.baseConfig.showCheckmarksOnSwitches)
+    }
     val typography = remember(fontFamily) { fontFamily?.let { Typography().withFontFamily(it) } }
 
     if (!preview) {
         LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
             colorScheme = context.clockColorScheme(darkTheme)
             fontFamily = context.clockFontFamily()
+            showSwitchCheckmarks = context.isCredentialStorageAvailable && context.baseConfig.showCheckmarksOnSwitches
         }
     }
 
@@ -75,8 +83,9 @@ fun ClockTheme(content: @Composable () -> Unit) {
         motionScheme = MotionScheme.expressive(),
         shapes = ClockShapes,
         typography = typography,
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(LocalShowSwitchCheckmarks provides showSwitchCheckmarks, content = content)
+    }
 }
 
 private fun Context.clockFontFamily(): FontFamily? {

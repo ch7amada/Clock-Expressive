@@ -27,7 +27,6 @@ import org.fossify.clock.ui.dialogs.showReminderDurationDialog
 import org.fossify.clock.ui.settings.ClockSettingsScreen
 import org.fossify.clock.ui.settings.ClockSettingsState
 import org.fossify.clock.ui.theme.ClockTheme
-import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.formatMinutesToTimeString
 import org.fossify.commons.extensions.formatSecondsToTimeString
 import org.fossify.commons.extensions.hasThankYouUnlock
@@ -123,7 +122,6 @@ class SettingsActivity : SimpleActivity() {
         val locale = Locale.getDefault()
         val androidLanguageSettings = isTiramisuPlus()
         settings = ClockSettingsState(
-            showSwitchCheckmarks = baseConfig.showCheckmarksOnSwitches,
             showPurchaseThankYou = resources.getBoolean(CommonsR.bool.is_google_play_build) && !hasThankYouUnlock(),
             language = locale.displayLanguage.takeIf { androidLanguageSettings },
             useEnglish = config.useEnglish.takeIf {

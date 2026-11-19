@@ -26,7 +26,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -47,6 +46,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.fossify.clock.R
+import org.fossify.clock.ui.components.ClockSwitch
 import org.fossify.clock.ui.components.SelectionBar
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -251,7 +251,7 @@ private fun AlarmRow(
                 )
             }
 
-            Switch(
+            ClockSwitch(
                 checked = alarm.enabled,
                 onCheckedChange = onToggle,
                 modifier = Modifier.semantics { contentDescription = "$alarmDescription ${alarm.time}" },
