@@ -9,18 +9,19 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import org.fossify.clock.extensions.config
 import org.fossify.clock.helpers.MyDigitalTimeWidgetProvider
+import org.fossify.clock.helpers.resolveWidgetBackgroundColor
+import org.fossify.clock.helpers.resolveWidgetTextColor
 import org.fossify.clock.helpers.SIMPLE_PHONE
 import org.fossify.clock.ui.theme.ClockTheme
 import org.fossify.clock.ui.widget.DigitalWidgetPreview
 import org.fossify.clock.ui.widget.WidgetAppearanceScreen
 import org.fossify.commons.extensions.adjustAlpha
-import org.fossify.commons.extensions.isDynamicTheme
 import org.fossify.commons.helpers.IS_CUSTOMIZING_COLORS
-import org.fossify.commons.R as CommonsR
 
 class WidgetDigitalConfigureActivity : SimpleActivity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,7 +30,7 @@ class WidgetDigitalConfigureActivity : SimpleActivity() {
         setResult(RESULT_CANCELED)
 
         val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
-        val storedBackground = config.widgetBgColor
+        val storedBackground = resolveWidgetBackgroundColor()
         val initialBackground = Color.rgb(
             Color.red(storedBackground),
             Color.green(storedBackground),
@@ -39,7 +40,7 @@ class WidgetDigitalConfigureActivity : SimpleActivity() {
         val initialOpacity = (storedAlpha * 100).toInt()
         // The previous SeekBar only quantized alpha when its progress changed from zero.
         val initialAlpha = if (initialOpacity == 0) storedAlpha else initialOpacity / 100f
-        val initialTextColor = resolveTextColor()
+        val initialTextColor = resolveWidgetTextColor()
 
         if (!config.wasInitialWidgetSetUp && Build.BRAND.equals(SIMPLE_PHONE, ignoreCase = true)) {
             saveConfig(widgetId, initialBackground.adjustAlpha(initialAlpha), initialTextColor)
@@ -58,6 +59,8 @@ class WidgetDigitalConfigureActivity : SimpleActivity() {
             var alpha by rememberSaveable { mutableFloatStateOf(initialAlpha) }
             var opacity by rememberSaveable { mutableIntStateOf(initialOpacity) }
             var textColor by rememberSaveable { mutableIntStateOf(initialTextColor) }
+            var backgroundChanged by rememberSaveable { mutableStateOf(false) }
+            var textColorChanged by rememberSaveable { mutableStateOf(false) }
             val backgroundColor = background.adjustAlpha(alpha)
 
             ClockTheme(window = window) {
@@ -66,35 +69,33 @@ class WidgetDigitalConfigureActivity : SimpleActivity() {
                     opaqueBackgroundColor = background,
                     textColor = textColor,
                     opacity = opacity,
-                    onBackgroundColorChange = { background = it },
-                    onTextColorChange = { textColor = it },
+                    onBackgroundColorChange = { background = it; backgroundChanged = true },
+                    onTextColorChange = { textColor = it; textColorChanged = true },
                     onOpacityChange = {
                         if (opacity != it) {
                             opacity = it
                             alpha = it / 100f
+                            backgroundChanged = true
                         }
                     },
                     onBack = ::finish,
-                    onSave = { saveConfig(widgetId, backgroundColor, textColor) },
+                    onSave = { saveConfig(widgetId, backgroundColor, textColor, backgroundChanged, textColorChanged) },
                     preview = { DigitalWidgetPreview(use24HourFormat, textColor) },
                 )
             }
         }
     }
 
-    private fun resolveTextColor(): Int {
-        val textColor = config.widgetTextColor
-        return if (textColor == getColor(CommonsR.color.default_widget_text_color) && isDynamicTheme()) {
-            getColor(CommonsR.color.you_primary_color)
-        } else {
-            textColor
-        }
-    }
-
-    private fun saveConfig(widgetId: Int, backgroundColor: Int, textColor: Int) {
+    private fun saveConfig(widgetId: Int, backgroundColor: Int, textColor: Int, backgroundChanged: Boolean = false, textColorChanged: Boolean = false) {
         config.apply {
-            widgetBgColor = backgroundColor
-            widgetTextColor = textColor
+            if (backgroundChanged) {
+                widgetBgColor = backgroundColor
+                widgetBackgroundColorSet = true
+            }
+            if (textColorChanged) {
+                widgetTextColor = textColor
+                widgetTextColorSet = true
+            }
         }
 
         val update = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE, null, this, MyDigitalTimeWidgetProvider::class.java)

@@ -70,11 +70,11 @@ class MyDigitalTimeWidgetProvider : AppWidgetProvider() {
     }
 
     private fun updateColors(context: Context, views: RemoteViews) {
-        val config = context.config
-        val widgetTextColor = config.widgetTextColor
+        val backgroundColor = context.resolveWidgetBackgroundColor()
+        val widgetTextColor = context.resolveWidgetTextColor()
 
         views.apply {
-            applyColorFilter(R.id.widget_background, config.widgetBgColor)
+            applyColorFilter(R.id.widget_background, backgroundColor)
             setTextColor(R.id.widget_text_clock_24, widgetTextColor)
             setTextColor(R.id.widget_text_clock_12, widgetTextColor)
             setTextColor(R.id.widget_date, widgetTextColor)

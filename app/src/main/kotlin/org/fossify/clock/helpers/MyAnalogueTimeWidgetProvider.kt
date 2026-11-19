@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.widget.RemoteViews
 import org.fossify.clock.R
 import org.fossify.clock.activities.SplashActivity
-import org.fossify.clock.extensions.config
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.getLaunchIntent
 
@@ -33,7 +32,7 @@ class MyAnalogueTimeWidgetProvider : AppWidgetProvider() {
 
     private fun updateColors(context: Context, views: RemoteViews) {
         views.apply {
-            applyColorFilter(R.id.widget_background, context.config.widgetBgColor)
+            applyColorFilter(R.id.widget_background, context.resolveWidgetBackgroundColor())
         }
     }
 
