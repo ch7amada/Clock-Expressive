@@ -51,7 +51,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Alarm intent selector — `SelectAlarmDialog.kt` and `IntentHandlerActivity.kt` UI call site. Preserve dismiss alarm matching, selection and finish behavior.
 - [x] Export form — `ExportDataDialog.kt`. Preserve default path, filename validation, scopes and completion contract.
 - [x] Typography preference parity — feed the existing Fossify system, monospace, and imported-font choices into both standard and emphasized Compose typography without changing font storage or Commons customization.
-- [~] Settings — `SettingsActivity.kt` and `activity_settings.xml`. Use visually grouped appearance, clock, reminders, widget and data rows with existing resources, preference values and conditional availability.
+- [x] Settings — `SettingsActivity.kt` and `activity_settings.xml`. Use visually grouped appearance, clock, reminders, widget and data rows with existing resources, preference values and conditional availability.
 - [ ] Digital widget configuration — `WidgetDigitalConfigureActivity.kt` and its app-owned configuration layout. Pair a live preview with color and opacity controls, preserving widget result protocol and formatting.
 - [ ] Analogue widget configuration — `WidgetAnalogueConfigureActivity.kt` and its app-owned configuration layout. Match the digital config hierarchy and preserve its analogue face and preference semantics.
 - [ ] Shared Fossify UI audit and follow-through — identify dependency-owned About, color customization, sound selection, confirmation and permission routes. Split into one worker per remaining app-controlled flow, preserve upstream contracts and verify intent results.
@@ -81,3 +81,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Alarm intent selector `7114cb21` — verified multiple matches through ACTION_DISMISS_ALARM, distinguishable blank/duplicate labels, each no-selection dismissal, and only the selected alarm dismissed. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Export form `4ba14147` — verified name generation and validation, duplicate detection, default and configured path handling, cancellation, and real SAF export with the existing backup schema. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Typography `2d1e3861` — verified system, monospace, imported font via Files, live resume refresh and missing-font fallback on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
+- Settings `277c3c7e` — verified toggles, immediate selectors, reminder units, locale and customization routes, file pickers, 200% font scale, and Google Play Thank You visibility/route. Both flavors assembled. Unit tests reported `NO-SOURCE`.
