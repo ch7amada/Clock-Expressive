@@ -6,6 +6,7 @@ import java.io.FileInputStream
 plugins {
     alias(libs.plugins.android)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.kotlinCompose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
 }
@@ -63,6 +64,7 @@ android {
     }
 
     buildFeatures {
+        compose = true
         viewBinding = true
         buildConfig = true
     }
@@ -142,7 +144,13 @@ detekt {
 dependencies {
     implementation(libs.fossify.commons)
 
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui)
+
     implementation(libs.bundles.lifecycle)
+    implementation(libs.androidx.lifecycle.runtimeCompose)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.preference)
     implementation(libs.kotlinx.coroutines)
