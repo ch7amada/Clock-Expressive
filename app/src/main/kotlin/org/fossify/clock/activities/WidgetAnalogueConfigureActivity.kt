@@ -2,128 +2,90 @@ package org.fossify.clock.activities
 
 import android.appwidget.AppWidgetManager
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
-import android.widget.SeekBar
-import org.fossify.clock.databinding.WidgetConfigAnalogueBinding
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import org.fossify.clock.extensions.config
 import org.fossify.clock.helpers.MyAnalogueTimeWidgetProvider
-import org.fossify.commons.dialogs.ColorPickerDialog
+import org.fossify.clock.ui.theme.ClockTheme
+import org.fossify.clock.ui.widget.AnalogueWidgetPreview
+import org.fossify.clock.ui.widget.WidgetAppearanceScreen
 import org.fossify.commons.extensions.adjustAlpha
-import org.fossify.commons.extensions.applyColorFilter
-import org.fossify.commons.extensions.getContrastColor
-import org.fossify.commons.extensions.getProperPrimaryColor
-import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.isDynamicTheme
-import org.fossify.commons.extensions.setFillWithStroke
-import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.IS_CUSTOMIZING_COLORS
+import org.fossify.commons.R as CommonsR
 
 class WidgetAnalogueConfigureActivity : SimpleActivity() {
-    private var mBgAlpha = 0f
-    private var mWidgetId = 0
-    private var mBgColor = 0
-    private var mBgColorWithoutTransparency = 0
-    private val binding: WidgetConfigAnalogueBinding by viewBinding(WidgetConfigAnalogueBinding::inflate)
-
     public override fun onCreate(savedInstanceState: Bundle?) {
         useDynamicTheme = false
         super.onCreate(savedInstanceState)
         setResult(RESULT_CANCELED)
-        setContentView(binding.root)
-        setupEdgeToEdge(padTopSystem = listOf(binding.configAnalogueHolder), padBottomSystem = listOf(binding.root))
-        initVariables()
 
-        val isCustomizingColors = intent.extras?.getBoolean(IS_CUSTOMIZING_COLORS) == true
-        mWidgetId = intent.extras?.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID)
-            ?: AppWidgetManager.INVALID_APPWIDGET_ID
-
-        if (mWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID && !isCustomizingColors) {
+        val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID && !intent.getBooleanExtra(IS_CUSTOMIZING_COLORS, false)) {
             finish()
+            return
         }
 
-        binding.configAnalogueSave.setOnClickListener { saveConfig() }
-        binding.configAnalogueSave.setTextColor(getProperPrimaryColor().getContrastColor())
-        binding.configAnalogueBgColor.setOnClickListener { pickBackgroundColor() }
-
-        val primaryColor = getProperPrimaryColor()
-        binding.configAnalogueBgSeekbar.setColors(getProperTextColor(), primaryColor, primaryColor)
-    }
-
-    private fun initVariables() {
-        mBgColor = config.widgetBgColor
-        if (
-            mBgColor == resources.getColor(org.fossify.commons.R.color.default_widget_bg_color)
-            && isDynamicTheme()
-        ) {
-            mBgColor = resources.getColor(org.fossify.commons.R.color.you_primary_color, theme)
-        }
-
-        mBgAlpha = Color.alpha(mBgColor) / 255.toFloat()
-        mBgColorWithoutTransparency = Color.rgb(
-            Color.red(mBgColor), Color.green(mBgColor), Color.blue(mBgColor)
+        val storedBackground = resolveBackgroundColor()
+        val initialBackground = Color.rgb(
+            Color.red(storedBackground),
+            Color.green(storedBackground),
+            Color.blue(storedBackground),
         )
+        val storedAlpha = Color.alpha(storedBackground) / 255f
+        val initialOpacity = (storedAlpha * 100).toInt()
+        // The previous SeekBar only quantized alpha when its progress changed from zero.
+        val initialAlpha = if (initialOpacity == 0) storedAlpha else initialOpacity / 100f
 
-        binding.configAnalogueBgSeekbar.setOnSeekBarChangeListener(bgSeekbarChangeListener)
-        binding.configAnalogueBgSeekbar.progress = (mBgAlpha * 100).toInt()
-        updateBackgroundColor()
-    }
+        setContent {
+            var background by rememberSaveable { mutableIntStateOf(initialBackground) }
+            var alpha by rememberSaveable { mutableFloatStateOf(initialAlpha) }
+            var opacity by rememberSaveable { mutableIntStateOf(initialOpacity) }
+            val backgroundColor = background.adjustAlpha(alpha)
 
-    private fun saveConfig() {
-        storeWidgetColors()
-        requestWidgetUpdate()
-
-        Intent().apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mWidgetId)
-            setResult(RESULT_OK, this)
-        }
-        finish()
-    }
-
-    private fun storeWidgetColors() {
-        config.apply {
-            widgetBgColor = mBgColor
-        }
-    }
-
-    private fun pickBackgroundColor() {
-        ColorPickerDialog(this, mBgColorWithoutTransparency) { wasPositivePressed, color ->
-            if (wasPositivePressed) {
-                mBgColorWithoutTransparency = color
-                updateBackgroundColor()
+            ClockTheme {
+                WidgetAppearanceScreen(
+                    backgroundColor = backgroundColor,
+                    opaqueBackgroundColor = background,
+                    opacity = opacity,
+                    onBackgroundColorChange = { background = it },
+                    onOpacityChange = {
+                        if (opacity != it) {
+                            opacity = it
+                            alpha = it / 100f
+                        }
+                    },
+                    onBack = ::finish,
+                    onSave = { saveConfig(widgetId, backgroundColor) },
+                    preview = { AnalogueWidgetPreview(backgroundColor) },
+                )
             }
         }
     }
 
-    private fun requestWidgetUpdate() {
-        Intent(
-            AppWidgetManager.ACTION_APPWIDGET_UPDATE,
-            null,
-            this,
-            MyAnalogueTimeWidgetProvider::class.java
-        ).apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(mWidgetId))
-            sendBroadcast(this)
+    private fun resolveBackgroundColor(): Int {
+        val backgroundColor = config.widgetBgColor
+        return if (backgroundColor == getColor(CommonsR.color.default_widget_bg_color) && isDynamicTheme()) {
+            getColor(CommonsR.color.you_primary_color)
+        } else {
+            backgroundColor
         }
     }
 
-    private fun updateBackgroundColor() {
-        mBgColor = mBgColorWithoutTransparency.adjustAlpha(mBgAlpha)
-        binding.configAnalogueBgColor.setFillWithStroke(mBgColor, mBgColor)
-        binding.configAnalogueBackground.applyColorFilter(mBgColor)
-        binding.configAnalogueSave.backgroundTintList =
-            ColorStateList.valueOf(getProperPrimaryColor())
-    }
+    private fun saveConfig(widgetId: Int, backgroundColor: Int) {
+        config.widgetBgColor = backgroundColor
 
-    private val bgSeekbarChangeListener = object : SeekBar.OnSeekBarChangeListener {
-        override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-            mBgAlpha = progress.toFloat() / 100.toFloat()
-            updateBackgroundColor()
-        }
+        val update = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE, null, this, MyAnalogueTimeWidgetProvider::class.java)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(widgetId))
+        sendBroadcast(update)
 
-        override fun onStartTrackingTouch(seekBar: SeekBar) {}
-
-        override fun onStopTrackingTouch(seekBar: SeekBar) {}
+        setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
+        finish()
     }
 }
