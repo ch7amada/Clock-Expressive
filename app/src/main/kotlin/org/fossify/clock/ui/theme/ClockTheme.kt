@@ -1,6 +1,7 @@
 package org.fossify.clock.ui.theme
 
 import android.content.Context
+import android.graphics.Typeface as AndroidTypeface
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,6 +9,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -22,6 +24,8 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -29,6 +33,10 @@ import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.getProperBackgroundColor
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
+import org.fossify.commons.extensions.isCredentialStorageAvailable
+import org.fossify.commons.helpers.FONT_TYPE_CUSTOM
+import org.fossify.commons.helpers.FONT_TYPE_MONOSPACE
+import org.fossify.commons.helpers.FontHelper
 
 private val ClockShapes = Shapes(
     medium = RoundedCornerShape(12.dp),
@@ -50,10 +58,15 @@ fun ClockTheme(content: @Composable () -> Unit) {
     var colorScheme by remember(context, darkTheme, preview) {
         mutableStateOf(if (preview) fixedColorScheme(darkTheme) else context.clockColorScheme(darkTheme))
     }
+    var fontFamily by remember(context, preview) {
+        mutableStateOf(if (preview) null else context.clockFontFamily())
+    }
+    val typography = remember(fontFamily) { fontFamily?.let { Typography().withFontFamily(it) } }
 
     if (!preview) {
         LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
             colorScheme = context.clockColorScheme(darkTheme)
+            fontFamily = context.clockFontFamily()
         }
     }
 
@@ -61,9 +74,55 @@ fun ClockTheme(content: @Composable () -> Unit) {
         colorScheme = colorScheme,
         motionScheme = MotionScheme.expressive(),
         shapes = ClockShapes,
+        typography = typography,
         content = content,
     )
 }
+
+private fun Context.clockFontFamily(): FontFamily? {
+    if (!isCredentialStorageAvailable) return null
+
+    return when (baseConfig.fontType) {
+        FONT_TYPE_MONOSPACE -> FontFamily.Monospace
+        FONT_TYPE_CUSTOM -> FontHelper.getTypeface(this).takeUnless { it == AndroidTypeface.DEFAULT }?.let {
+            FontFamily(Typeface(it))
+        }
+        else -> null
+    }
+}
+
+private fun Typography.withFontFamily(fontFamily: FontFamily): Typography = copy(
+    displayLarge = displayLarge.copy(fontFamily = fontFamily),
+    displayMedium = displayMedium.copy(fontFamily = fontFamily),
+    displaySmall = displaySmall.copy(fontFamily = fontFamily),
+    headlineLarge = headlineLarge.copy(fontFamily = fontFamily),
+    headlineMedium = headlineMedium.copy(fontFamily = fontFamily),
+    headlineSmall = headlineSmall.copy(fontFamily = fontFamily),
+    titleLarge = titleLarge.copy(fontFamily = fontFamily),
+    titleMedium = titleMedium.copy(fontFamily = fontFamily),
+    titleSmall = titleSmall.copy(fontFamily = fontFamily),
+    bodyLarge = bodyLarge.copy(fontFamily = fontFamily),
+    bodyMedium = bodyMedium.copy(fontFamily = fontFamily),
+    bodySmall = bodySmall.copy(fontFamily = fontFamily),
+    labelLarge = labelLarge.copy(fontFamily = fontFamily),
+    labelMedium = labelMedium.copy(fontFamily = fontFamily),
+    labelSmall = labelSmall.copy(fontFamily = fontFamily),
+    displayLargeEmphasized = displayLargeEmphasized.copy(fontFamily = fontFamily),
+    displayMediumEmphasized = displayMediumEmphasized.copy(fontFamily = fontFamily),
+    displaySmallEmphasized = displaySmallEmphasized.copy(fontFamily = fontFamily),
+    headlineLargeEmphasized = headlineLargeEmphasized.copy(fontFamily = fontFamily),
+    headlineMediumEmphasized = headlineMediumEmphasized.copy(fontFamily = fontFamily),
+    headlineSmallEmphasized = headlineSmallEmphasized.copy(fontFamily = fontFamily),
+    titleLargeEmphasized = titleLargeEmphasized.copy(fontFamily = fontFamily),
+    titleMediumEmphasized = titleMediumEmphasized.copy(fontFamily = fontFamily),
+    titleSmallEmphasized = titleSmallEmphasized.copy(fontFamily = fontFamily),
+    bodyLargeEmphasized = bodyLargeEmphasized.copy(fontFamily = fontFamily),
+    bodyMediumEmphasized = bodyMediumEmphasized.copy(fontFamily = fontFamily),
+    bodySmallEmphasized = bodySmallEmphasized.copy(fontFamily = fontFamily),
+    labelLargeEmphasized = labelLargeEmphasized.copy(fontFamily = fontFamily),
+    labelMediumEmphasized = labelMediumEmphasized.copy(fontFamily = fontFamily),
+    labelSmallEmphasized = labelSmallEmphasized.copy(fontFamily = fontFamily),
+)
 
 private fun fixedColorScheme(darkTheme: Boolean): ColorScheme =
     if (darkTheme) darkColorScheme() else expressiveLightColorScheme()
