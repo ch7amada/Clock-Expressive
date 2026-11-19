@@ -11,6 +11,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.core.net.toUri
+import org.fossify.clock.BuildConfig
 import org.fossify.clock.activities.AlarmActivity
 import org.fossify.clock.extensions.alarmController
 import org.fossify.clock.extensions.config
@@ -36,8 +37,8 @@ class AlarmService : Service() {
         private const val VIBRATION_PATTERN_TIMING = 500L
         private const val VOLUME_INCREASE_STEP = 0.1f
 
-        const val ACTION_START_ALARM = "org.fossify.clock.START_ALARM"
-        const val ACTION_STOP_ALARM = "org.fossify.clock.STOP_ALARM"
+        const val ACTION_START_ALARM = "${BuildConfig.APPLICATION_ID}.START_ALARM"
+        const val ACTION_STOP_ALARM = "${BuildConfig.APPLICATION_ID}.STOP_ALARM"
     }
 
     private var activeAlarm: Alarm? = null

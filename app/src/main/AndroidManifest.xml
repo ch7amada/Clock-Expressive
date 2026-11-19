@@ -29,7 +29,7 @@
         android:allowBackup="true"
         android:appCategory="productivity"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_launcher_name"
+        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme">
 
@@ -40,7 +40,7 @@
             android:theme="@style/SplashTheme">
 
             <intent-filter>
-                <action android:name="org.fossify.clock.TOGGLE_STOPWATCH" />
+                <action android:name="${applicationId}.TOGGLE_STOPWATCH" />
                 <action android:name="android.intent.action.SHOW_ALARMS" />
                 <action android:name="android.intent.action.SHOW_TIMERS" />
                 <action android:name="android.intent.action.SET_ALARM" />
@@ -101,11 +101,21 @@
         </activity>
 
         <activity
-            android:name="org.fossify.commons.activities.AboutActivity"
+            android:name=".activities.AboutActivity"
             android:configChanges="orientation"
             android:exported="false"
             android:label="@string/about"
             android:parentActivityName=".activities.MainActivity" />
+
+        <activity
+            android:name="org.fossify.commons.activities.FAQActivity"
+            android:parentActivityName=".activities.AboutActivity"
+            tools:replace="android:parentActivityName" />
+
+        <activity
+            android:name="org.fossify.commons.activities.LicenseActivity"
+            android:parentActivityName=".activities.AboutActivity"
+            tools:replace="android:parentActivityName" />
 
         <activity
             android:name=".activities.SnoozeReminderActivity"

@@ -31,7 +31,7 @@ open class SimpleActivity : BaseSimpleActivity() {
         R.mipmap.ic_launcher_grey_black
     )
 
-    override fun getAppLauncherName() = getString(R.string.app_launcher_name)
+    override fun getAppLauncherName() = getString(R.string.app_name)
 
     override fun getRepositoryName() = REPOSITORY_NAME
 }

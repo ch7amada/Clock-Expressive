@@ -1,5 +1,6 @@
 package org.fossify.clock.helpers
 
+import org.fossify.clock.BuildConfig
 import org.fossify.clock.extensions.isBitSet
 import org.fossify.clock.models.Alarm
 import org.fossify.clock.models.MyTimeZone
@@ -96,7 +97,7 @@ const val TOMORROW_BIT = -2
 
 // stopwatch shortcut
 const val STOPWATCH_SHORTCUT_ID = "stopwatch_shortcut_id"
-const val STOPWATCH_TOGGLE_ACTION = "org.fossify.clock.TOGGLE_STOPWATCH"
+const val STOPWATCH_TOGGLE_ACTION = "${BuildConfig.APPLICATION_ID}.TOGGLE_STOPWATCH"
 
 // time formatting
 const val FORMAT_12H = "h:mm a"

@@ -8,7 +8,7 @@ Clock Expressive is an unofficial Android fork of [Fossify Clock](https://github
 
 **[Download the APK from GitHub Releases](https://github.com/ch7amada/Clock-Expressive/releases/latest)** · Requires Android 8.0 or later.
 
-Download the `.apk` from the release assets and open it on your device. Clock Expressive shares Fossify Clock's Android package ID and uses its own signing key. If you have a copy signed with another key, export your alarms and timers before uninstalling it, then install this APK and import your backup.
+Download the `.apk` from the release assets and open it on your device. Clock Expressive 1.6.1 and later use `io.github.ch7amada.clockexpressive` and can be installed alongside Fossify Clock. To move your alarms and timers from an older installation, export them from its settings and import the backup in Clock Expressive. Android stores other preferences and widgets separately for each app.
 
 ## Features
 

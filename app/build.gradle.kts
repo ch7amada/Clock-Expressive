@@ -1,3 +1,11 @@
+import com.android.build.api.instrumentation.AsmClassVisitorFactory
+import com.android.build.api.instrumentation.ClassContext
+import com.android.build.api.instrumentation.ClassData
+import com.android.build.api.instrumentation.InstrumentationParameters
+import com.android.build.api.instrumentation.InstrumentationScope
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.properties.Properties
@@ -116,7 +124,7 @@ android {
         )
     }
 
-    namespace = project.property("APP_ID").toString()
+    namespace = "org.fossify.clock"
 
     lint {
         checkReleaseBuilds = false
@@ -160,4 +168,49 @@ dependencies {
     implementation(libs.bundles.room)
     ksp(libs.androidx.room.compiler)
     detektPlugins(libs.compose.detekt)
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.instrumentation.transformClassesWith(
+            CommonsStartupVisitor::class.java,
+            InstrumentationScope.ALL,
+        ) {}
+    }
+}
+
+// Commons treats every non-Fossify package as a fake. Keep its activity
+// initialization and omit that branding dialog for this independent fork.
+abstract class CommonsStartupVisitor : AsmClassVisitorFactory<InstrumentationParameters.None> {
+    override fun isInstrumentable(classData: ClassData) =
+        classData.className == "org.fossify.commons.activities.BaseSimpleActivity"
+
+    override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor =
+        object : ClassVisitor(Opcodes.ASM9, nextClassVisitor) {
+            override fun visitMethod(
+                access: Int,
+                name: String,
+                descriptor: String,
+                signature: String?,
+                exceptions: Array<out String>?,
+            ): MethodVisitor {
+                val method = super.visitMethod(access, name, descriptor, signature, exceptions)
+                if (name != "onCreate" || descriptor != "(Landroid/os/Bundle;)V") return method
+
+                return object : MethodVisitor(Opcodes.ASM9, method) {
+                    override fun visitMethodInsn(opcode: Int, owner: String, name: String, descriptor: String, isInterface: Boolean) {
+                        if (opcode == Opcodes.INVOKESTATIC &&
+                            owner == "org/fossify/commons/extensions/ActivityKt" &&
+                            name == "showModdedAppWarning" &&
+                            descriptor == "(Lorg/fossify/commons/activities/BaseSimpleActivity;)V"
+                        ) {
+                            // Remove the activity argument consumed by the omitted call.
+                            super.visitInsn(Opcodes.POP)
+                        } else {
+                            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+                        }
+                    }
+                }
+            }
+        }
 }
