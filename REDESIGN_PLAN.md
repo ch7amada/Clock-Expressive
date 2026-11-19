@@ -37,8 +37,8 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Alarm editor — `EditAlarmDialog.kt`. Lead with selected time and group weekday toggles, label, sound, vibration and reminder options; retain add/edit/delete and scheduling callbacks.
 - [x] Alarm and timer sort dialogs — migrate both consumers of the same tonal radio-list dialog, keeping each preference key, default, option order and confirm-only write.
 - [x] Alarm list — `AlarmFragment.kt` and `AlarmsAdapter.kt`. Group alarm time and recurrence in tonal rows with accessible switches, keep selection, add, edit, bulk actions and permission flows.
-- [~] Zone picker — `AddTimeZonesDialog.kt` and `SelectTimeZonesAdapter.kt`. Preserve ordering, checkbox selection and confirmation with a scrollable Compose list and stable keys.
-- [ ] Zone editor — `EditTimeZoneDialog.kt`. Preserve label edits, cancellation and deletion behavior.
+- [x] Zone picker — `AddTimeZonesDialog.kt` and `SelectTimeZonesAdapter.kt`. Preserve ordering, checkbox selection and confirmation with a scrollable Compose list and stable keys.
+- [ ] Zone editor — `EditTimeZoneDialog.kt`. Preserve title edits, dismissal, and clearing a title to restore its default.
 - [ ] World clock — `ClockFragment.kt`, `TimeZonesAdapter.kt`, and clock readout views. Feature the local time and next alarm, with date, UTC offsets and zone times in supporting tonal rows. Preserve tick cadence, 12/24-hour format and zone ordering.
 - [ ] Stopwatch — `StopwatchFragment.kt` and `StopwatchAdapter.kt`. Pair a high-contrast time readout with expressive Start/Pause and Lap/Reset controls. Preserve timing, service binding, lap deltas, ordering and landscape access.
 - [ ] Timer duration picker — `MyTimePickerDialogDialog.kt` and its layout. Preserve hours 0–23 and minutes/seconds 0–59, initial selection and confirm-only callback. Support localized numeric input and touch adjustment.
@@ -65,3 +65,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Alarm editor `e747be3e` — verified edit/new, time picker, weekday and vibration, label and IME, ordinary sound selection, cancellation, and save through first-run permission on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Sort dialogs `afb09bcb` — verified options, persistence on confirm, all dismissal paths, and compact large-font scrolling on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Alarm list `2d87c0c4` — verified add, edit, recurring/dayless toggles, scheduling, contextual selection/delete and persisted drag ordering on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`. Existing Clock next-alarm text can remain stale after bulk delete until its next refresh.
+- Zone picker `12444db0` — verified catalog order, multi-select, long-list scrolling, confirmation persistence and all cancellation paths on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
