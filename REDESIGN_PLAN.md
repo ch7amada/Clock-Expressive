@@ -37,7 +37,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Alarm editor — `EditAlarmDialog.kt`. Lead with selected time and group weekday toggles, label, sound, vibration and reminder options; retain add/edit/delete and scheduling callbacks.
 - [x] Alarm and timer sort dialogs — migrate both consumers of the same tonal radio-list dialog, keeping each preference key, default, option order and confirm-only write.
 - [x] Alarm list — `AlarmFragment.kt` and `AlarmsAdapter.kt`. Group alarm time and recurrence in tonal rows with accessible switches, keep selection, add, edit, bulk actions and permission flows.
-- [ ] Zone picker — `AddTimeZonesDialog.kt` and `SelectTimeZonesAdapter.kt`. Preserve search, selection and confirmation with a scrollable Compose list and stable keys.
+- [~] Zone picker — `AddTimeZonesDialog.kt` and `SelectTimeZonesAdapter.kt`. Preserve ordering, checkbox selection and confirmation with a scrollable Compose list and stable keys.
 - [ ] Zone editor — `EditTimeZoneDialog.kt`. Preserve label edits, cancellation and deletion behavior.
 - [ ] World clock — `ClockFragment.kt`, `TimeZonesAdapter.kt`, and clock readout views. Feature the local time and next alarm, with date, UTC offsets and zone times in supporting tonal rows. Preserve tick cadence, 12/24-hour format and zone ordering.
 - [ ] Stopwatch — `StopwatchFragment.kt` and `StopwatchAdapter.kt`. Pair a high-contrast time readout with expressive Start/Pause and Lap/Reset controls. Preserve timing, service binding, lap deltas, ordering and landscape access.
