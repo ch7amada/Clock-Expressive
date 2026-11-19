@@ -7,8 +7,50 @@ import android.graphics.drawable.Icon
 import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.core.graphics.drawable.toDrawable
-import me.grantland.widget.AutofitHelper
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationItemIconPosition
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarArrangement
+import androidx.compose.material3.ShortNavigationBarItem
+import androidx.compose.material3.ShortNavigationBarItemDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.fossify.clock.BuildConfig
 import org.fossify.clock.R
 import org.fossify.clock.adapters.ViewPagerAdapter
@@ -34,21 +76,15 @@ import org.fossify.clock.helpers.TAB_TIMER
 import org.fossify.clock.helpers.TAB_TIMER_INDEX
 import org.fossify.clock.helpers.TIMER_ID
 import org.fossify.clock.helpers.TOGGLE_STOPWATCH
-import org.fossify.commons.databinding.BottomTablayoutItemBinding
+import org.fossify.clock.ui.theme.ClockTheme
 import org.fossify.commons.extensions.appLaunched
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.convertToBitmap
-import org.fossify.commons.extensions.getBottomNavigationBackgroundColor
-import org.fossify.commons.extensions.getProperBackgroundColor
-import org.fossify.commons.extensions.getProperPrimaryColor
-import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.launchMoreAppsFromUsIntent
 import org.fossify.commons.extensions.onPageChangeListener
-import org.fossify.commons.extensions.onTabSelectionChanged
 import org.fossify.commons.extensions.shortcutManager
 import org.fossify.commons.extensions.storeNewYourAlarmSound
 import org.fossify.commons.extensions.toast
-import org.fossify.commons.extensions.updateBottomTabItemColors
 import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.LICENSE_AUTOFITTEXTVIEW
 import org.fossify.commons.helpers.LICENSE_NUMBER_PICKER
@@ -59,23 +95,18 @@ import java.time.temporal.WeekFields
 import java.util.Locale
 
 class MainActivity : SimpleActivity() {
-    private var storedTextColor = 0
-    private var storedBackgroundColor = 0
-    private var storedPrimaryColor = 0
+    private var selectedTab by mutableIntStateOf(TAB_CLOCK_INDEX)
     private val binding: ActivityMainBinding by viewBinding(ActivityMainBinding::inflate)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         appLaunched(BuildConfig.APPLICATION_ID)
-        setupOptionsMenu()
-        refreshMenuItems()
+        // Commons pads the host horizontally for side navigation bars and cutouts.
+        setupEdgeToEdge()
 
-        setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.mainTabsHolder))
-
-        storeStateVariables()
         initFragments()
-        setupTabs()
+        setupShell()
         updateWidgets()
         migrateFirstDayOfWeek()
         ensureBackgroundThread {
@@ -95,32 +126,16 @@ class MainActivity : SimpleActivity() {
 
     override fun onResume() {
         super.onResume()
-        setupTopAppBar(binding.mainAppbar, topBarColor = getProperBackgroundColor())
-        val configTextColor = getProperTextColor()
-        if (storedTextColor != configTextColor) {
-            getInactiveTabIndexes(binding.viewPager.currentItem).forEach {
-                binding.mainTabsHolder.getTabAt(it)?.icon?.applyColorFilter(configTextColor)
-            }
-        }
-
-        val configBackgroundColor = getProperBackgroundColor()
-        if (storedBackgroundColor != configBackgroundColor) {
-            binding.mainTabsHolder.background = configBackgroundColor.toDrawable()
-        }
-
-        val configPrimaryColor = getProperPrimaryColor()
-        if (storedPrimaryColor != configPrimaryColor) {
-            binding.mainTabsHolder.setSelectedTabIndicatorColor(getProperPrimaryColor())
-            binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.icon
-                ?.applyColorFilter(getProperPrimaryColor())
-        }
-
         if (config.preventPhoneFromSleeping) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
 
-        setupTabColors()
         checkShortcuts()
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        selectedTab = binding.viewPager.currentItem
     }
 
     @SuppressLint("NewApi")
@@ -162,36 +177,155 @@ class MainActivity : SimpleActivity() {
 
     override fun onPause() {
         super.onPause()
-        storeStateVariables()
         if (config.preventPhoneFromSleeping) {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
         config.lastUsedViewPagerPage = binding.viewPager.currentItem
     }
 
-    private fun setupOptionsMenu() {
-        binding.mainToolbar.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.sort -> when (binding.viewPager.currentItem) {
-                    TAB_ALARM_INDEX -> getViewPagerAdapter()?.showAlarmSortDialog()
-                    TAB_TIMER_INDEX -> getViewPagerAdapter()?.showTimerSortDialog()
-                }
-
-                R.id.more_apps_from_us -> launchMoreAppsFromUsIntent()
-                R.id.settings -> launchSettings()
-                R.id.about -> launchAbout()
-                else -> return@setOnMenuItemClickListener false
-            }
-            return@setOnMenuItemClickListener true
+    private fun setupShell() {
+        binding.mainHeader.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent { ClockTheme { MainHeader() } }
+        }
+        binding.mainNavigation.apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent { ClockTheme { MainNavigation() } }
         }
     }
 
-    private fun refreshMenuItems() {
-        binding.mainToolbar.menu.apply {
-            findItem(R.id.sort).isVisible = binding.viewPager.currentItem == getTabIndex(TAB_ALARM)
-                    || binding.viewPager.currentItem == getTabIndex(TAB_TIMER)
-            findItem(R.id.more_apps_from_us).isVisible =
-                resources.getBoolean(org.fossify.commons.R.bool.is_google_play_build)
+    @Composable
+    private fun MainHeader() {
+        val colors = MaterialTheme.colorScheme
+        val titleStyle = MaterialTheme.typography.headlineSmallEmphasized
+        val titleHeight = with(LocalDensity.current) { titleStyle.lineHeight.toDp() }
+        TopAppBar(
+            title = {
+                Text(
+                    text = stringResource(R.string.clock),
+                    style = titleStyle,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            actions = {
+                if (selectedTab == TAB_ALARM_INDEX || selectedTab == TAB_TIMER_INDEX) {
+                    IconButton(onClick = ::showSortDialog) {
+                        Icon(
+                            painter = painterResource(org.fossify.commons.R.drawable.ic_sort_vector),
+                            contentDescription = stringResource(org.fossify.commons.R.string.sort_by),
+                        )
+                    }
+                }
+                MainOverflowMenu()
+            },
+            expandedHeight = maxOf(64.dp, titleHeight + 16.dp),
+            windowInsets = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+                .only(WindowInsetsSides.Top),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = colors.surface,
+                titleContentColor = colors.onSurface,
+                actionIconContentColor = colors.onSurface,
+            ),
+        )
+    }
+
+    @Composable
+    private fun MainOverflowMenu() {
+        var expanded by remember { mutableStateOf(false) }
+        Box {
+            IconButton(onClick = { expanded = true }) {
+                Icon(
+                    painter = painterResource(org.fossify.commons.R.drawable.ic_three_dots_vector),
+                    contentDescription = stringResource(org.fossify.commons.R.string.more_options),
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(org.fossify.commons.R.string.settings)) },
+                    onClick = {
+                        expanded = false
+                        launchSettings()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(org.fossify.commons.R.string.about)) },
+                    onClick = {
+                        expanded = false
+                        launchAbout()
+                    },
+                )
+                if (resources.getBoolean(org.fossify.commons.R.bool.is_google_play_build)) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(org.fossify.commons.R.string.more_fossify_apps)) },
+                        onClick = {
+                            expanded = false
+                            launchMoreAppsFromUsIntent()
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    private fun showSortDialog() {
+        when (binding.viewPager.currentItem) {
+            TAB_ALARM_INDEX -> getViewPagerAdapter()?.showAlarmSortDialog()
+            TAB_TIMER_INDEX -> getViewPagerAdapter()?.showTimerSortDialog()
+        }
+    }
+
+    @Composable
+    private fun MainNavigation() {
+        val colors = MaterialTheme.colorScheme
+        val bottomInsets = WindowInsets.navigationBars.union(WindowInsets.ime)
+            .union(WindowInsets.displayCutout).only(WindowInsetsSides.Bottom)
+        Surface(color = colors.surface) {
+            ShortNavigationBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(bottomInsets)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    // Keep the width bounded without passing a full-width minimum to each item.
+                    .wrapContentWidth(),
+                containerColor = colors.surfaceContainerHigh,
+                contentColor = colors.onSurface,
+                windowInsets = WindowInsets(0),
+                arrangement = ShortNavigationBarArrangement.EqualWeight,
+            ) {
+                val itemColors = ShortNavigationBarItemDefaults.colors(
+                    selectedIconColor = colors.onPrimaryContainer,
+                    selectedTextColorTopIconPosition = colors.onSurface,
+                    selectedIndicatorColor = colors.primaryContainer,
+                    unselectedIconColor = colors.onSurfaceVariant,
+                    unselectedTextColor = colors.onSurfaceVariant,
+                )
+                MainTab.entries.forEachIndexed { index, tab ->
+                    val selected = index == selectedTab
+                    ShortNavigationBarItem(
+                        selected = selected,
+                        onClick = { binding.viewPager.currentItem = index },
+                        icon = {
+                            Icon(
+                                painter = painterResource(if (selected) tab.filledIcon else tab.outlineIcon),
+                                contentDescription = null,
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(tab.label),
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 12.sp),
+                            )
+                        },
+                        iconPosition = NavigationItemIconPosition.Top,
+                        colors = itemColors,
+                    )
+                }
+            }
         }
     }
 
@@ -210,12 +344,6 @@ class MainActivity : SimpleActivity() {
             }
         }
         super.onNewIntent(intent)
-    }
-
-    private fun storeStateVariables() {
-        storedTextColor = getProperTextColor()
-        storedBackgroundColor = getProperBackgroundColor()
-        storedPrimaryColor = getProperPrimaryColor()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
@@ -245,10 +373,7 @@ class MainActivity : SimpleActivity() {
     private fun initFragments() {
         val viewPagerAdapter = ViewPagerAdapter(supportFragmentManager)
         binding.viewPager.adapter = viewPagerAdapter
-        binding.viewPager.onPageChangeListener {
-            binding.mainTabsHolder.getTabAt(it)?.select()
-            refreshMenuItems()
-        }
+        binding.viewPager.onPageChangeListener { selectedTab = it }
 
         val tabToOpen = intent.getIntExtra(OPEN_TAB, config.defaultTab)
         intent.removeExtra(OPEN_TAB)
@@ -263,90 +388,19 @@ class MainActivity : SimpleActivity() {
 
         binding.viewPager.offscreenPageLimit = TABS_COUNT - 1
         binding.viewPager.currentItem = getTabIndex(tabToOpen)
+        selectedTab = binding.viewPager.currentItem
     }
 
-    private fun setupTabs() {
-        binding.mainTabsHolder.removeAllTabs()
-        val tabDrawables = arrayOf(
-            R.drawable.ic_clock_vector,
-            R.drawable.ic_alarm_vector,
-            R.drawable.ic_stopwatch_vector,
-            R.drawable.ic_hourglass_vector
-        )
-        val tabLabels = arrayOf(
-            R.string.clock,
+    private enum class MainTab(val label: Int, val outlineIcon: Int, val filledIcon: Int) {
+        CLOCK(R.string.clock, R.drawable.ic_clock_vector, R.drawable.ic_clock_filled_vector),
+        ALARM(
             org.fossify.commons.R.string.alarm,
-            R.string.stopwatch,
-            R.string.timer
-        )
-
-        tabDrawables.forEachIndexed { i, drawableId ->
-            binding.mainTabsHolder.newTab()
-                .setCustomView(org.fossify.commons.R.layout.bottom_tablayout_item)
-                .apply tab@{
-                    customView?.let { BottomTablayoutItemBinding.bind(it) }?.apply {
-                        tabItemIcon.setImageDrawable(getDrawable(drawableId))
-                        tabItemLabel.setText(tabLabels[i])
-                        AutofitHelper.create(tabItemLabel)
-                        binding.mainTabsHolder.addTab(this@tab)
-                    }
-                }
-        }
-
-        binding.mainTabsHolder.onTabSelectionChanged(
-            tabUnselectedAction = {
-                updateBottomTabItemColors(
-                    view = it.customView,
-                    isActive = false,
-                    drawableId = getDeselectedTabDrawableIds()[it.position]
-                )
-            },
-            tabSelectedAction = {
-                binding.viewPager.currentItem = it.position
-                updateBottomTabItemColors(
-                    view = it.customView,
-                    isActive = true,
-                    drawableId = getSelectedTabDrawableIds()[it.position]
-                )
-            }
-        )
+            R.drawable.ic_alarm_vector,
+            R.drawable.ic_alarm_filled_vector,
+        ),
+        STOPWATCH(R.string.stopwatch, R.drawable.ic_stopwatch_vector, R.drawable.ic_stopwatch_filled_vector),
+        TIMER(R.string.timer, R.drawable.ic_hourglass_vector, R.drawable.ic_hourglass_filled_vector),
     }
-
-    private fun setupTabColors() {
-        val activeView = binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.customView
-        updateBottomTabItemColors(
-            view = activeView,
-            isActive = true,
-            drawableId = getSelectedTabDrawableIds()[binding.viewPager.currentItem]
-        )
-
-        getInactiveTabIndexes(binding.viewPager.currentItem).forEach { index ->
-            val inactiveView = binding.mainTabsHolder.getTabAt(index)?.customView
-            updateBottomTabItemColors(inactiveView, false, getDeselectedTabDrawableIds()[index])
-        }
-
-        binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.select()
-        val bottomBarColor = getBottomNavigationBackgroundColor()
-        binding.mainTabsHolder.setBackgroundColor(bottomBarColor)
-    }
-
-    private fun getInactiveTabIndexes(activeIndex: Int): List<Int> {
-        return arrayListOf(0, 1, 2, 3).filter { it != activeIndex }
-    }
-
-    private fun getSelectedTabDrawableIds() = arrayOf(
-        R.drawable.ic_clock_filled_vector,
-        R.drawable.ic_alarm_filled_vector,
-        R.drawable.ic_stopwatch_filled_vector,
-        R.drawable.ic_hourglass_filled_vector
-    )
-
-    private fun getDeselectedTabDrawableIds() = arrayOf(
-        org.fossify.commons.R.drawable.ic_clock_vector,
-        R.drawable.ic_alarm_vector,
-        R.drawable.ic_stopwatch_vector,
-        R.drawable.ic_hourglass_vector
-    )
 
     private fun launchSettings() {
         startActivity(Intent(applicationContext, SettingsActivity::class.java))
