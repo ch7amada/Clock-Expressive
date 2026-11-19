@@ -50,7 +50,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Snooze reminder — `SnoozeReminderActivity.kt` and shared duration dialog call sites in AlarmActivity and SettingsActivity. Use grouped duration choices with the original range and timing.
 - [x] Alarm intent selector — `SelectAlarmDialog.kt` and `IntentHandlerActivity.kt` UI call site. Preserve dismiss alarm matching, selection and finish behavior.
 - [x] Export form — `ExportDataDialog.kt`. Preserve default path, filename validation, scopes and completion contract.
-- [ ] Typography preference parity — feed the existing Fossify system, monospace, and imported-font choices into both standard and emphasized Compose typography without changing font storage or Commons customization.
+- [~] Typography preference parity — feed the existing Fossify system, monospace, and imported-font choices into both standard and emphasized Compose typography without changing font storage or Commons customization.
 - [ ] Settings — `SettingsActivity.kt` and `activity_settings.xml`. Use visually grouped appearance, clock, reminders, widget and data rows with existing resources, preference values and conditional availability.
 - [ ] Digital widget configuration — `WidgetDigitalConfigureActivity.kt` and its app-owned configuration layout. Pair a live preview with color and opacity controls, preserving widget result protocol and formatting.
 - [ ] Analogue widget configuration — `WidgetAnalogueConfigureActivity.kt` and its app-owned configuration layout. Match the digital config hierarchy and preserve its analogue face and preference semantics.
