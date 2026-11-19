@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.widget.RemoteViews
 import org.fossify.clock.R
 import org.fossify.clock.activities.SplashActivity
-import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.getLaunchIntent
 
 class MyAnalogueTimeWidgetProvider : AppWidgetProvider() {
@@ -23,16 +22,9 @@ class MyAnalogueTimeWidgetProvider : AppWidgetProvider() {
         val appWidgetManager = AppWidgetManager.getInstance(context) ?: return
         appWidgetManager.getAppWidgetIds(getComponentName(context)).forEach {
             RemoteViews(context.packageName, R.layout.widget_analogue).apply {
-                updateColors(context, this)
                 setupAppOpenIntent(context, this)
                 appWidgetManager.updateAppWidget(it, this)
             }
-        }
-    }
-
-    private fun updateColors(context: Context, views: RemoteViews) {
-        views.apply {
-            applyColorFilter(R.id.widget_background, context.resolveWidgetBackgroundColor())
         }
     }
 

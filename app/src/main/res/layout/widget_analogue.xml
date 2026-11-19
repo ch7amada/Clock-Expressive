@@ -5,19 +5,15 @@
     android:layout_height="match_parent"
     android:padding="6dp">
 
-    <ImageView
-        android:id="@+id/widget_background"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:contentDescription="@null"
-        android:scaleType="fitCenter"
-        android:src="@drawable/widget_analogue_scallop" />
-
     <AnalogClock
         android:id="@+id/widget_text_clock"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:contentDescription="@string/app_name"
-        android:padding="18dp" />
+        android:dial="@drawable/widget_analogue_face"
+        android:hand_hour="@drawable/widget_analogue_hour_hand"
+        android:hand_hourTint="@color/widget_on_surface"
+        android:hand_minute="@drawable/widget_analogue_minute_hand"
+        android:hand_minuteTint="@color/widget_on_surface" />
 </FrameLayout>

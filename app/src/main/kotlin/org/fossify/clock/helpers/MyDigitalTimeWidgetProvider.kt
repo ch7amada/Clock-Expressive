@@ -6,12 +6,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
@@ -19,7 +13,6 @@ import org.fossify.clock.R
 import org.fossify.clock.activities.SplashActivity
 import org.fossify.clock.extensions.config
 import org.fossify.clock.extensions.getClosestEnabledAlarmString
-import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.getLaunchIntent
 import org.fossify.commons.extensions.setText
 import org.fossify.commons.extensions.setVisibleIf
@@ -40,7 +33,6 @@ class MyDigitalTimeWidgetProvider : AppWidgetProvider() {
             appWidgetManager.getAppWidgetIds(getComponentName(context)).forEach {
                 RemoteViews(context.packageName, R.layout.widget_digital).apply {
                     updateTexts(context, this, nextAlarm)
-                    updateColors(context, this)
                     setupAppOpenIntent(context, this)
                     appWidgetManager.updateAppWidget(it, this)
                 }
@@ -69,26 +61,6 @@ class MyDigitalTimeWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun updateColors(context: Context, views: RemoteViews) {
-        val backgroundColor = context.resolveWidgetBackgroundColor()
-        val widgetTextColor = context.resolveWidgetTextColor()
-
-        views.apply {
-            applyColorFilter(R.id.widget_background, backgroundColor)
-            setTextColor(R.id.widget_text_clock_24, widgetTextColor)
-            setTextColor(R.id.widget_text_clock_12, widgetTextColor)
-            setTextColor(R.id.widget_date, widgetTextColor)
-            setTextColor(R.id.widget_next_alarm, widgetTextColor)
-
-            val bitmap = getMultiplyColoredBitmap(
-                resourceId = R.drawable.ic_clock_shadowed,
-                newColor = widgetTextColor,
-                context = context
-            )
-            setImageViewBitmap(R.id.widget_next_alarm_image, bitmap)
-        }
-    }
-
     private fun getComponentName(context: Context) = ComponentName(context, this::class.java)
 
     private fun setupAppOpenIntent(context: Context, views: RemoteViews) {
@@ -113,15 +85,4 @@ class MyDigitalTimeWidgetProvider : AppWidgetProvider() {
         performUpdate(context)
     }
 
-    private fun getMultiplyColoredBitmap(resourceId: Int, newColor: Int, context: Context): Bitmap {
-        val options = BitmapFactory.Options()
-        options.inMutable = true
-        val bmp = BitmapFactory.decodeResource(context.resources, resourceId, options)
-        val paint = Paint()
-        val filter = PorterDuffColorFilter(newColor, PorterDuff.Mode.MULTIPLY)
-        paint.colorFilter = filter
-        val canvas = Canvas(bmp)
-        canvas.drawBitmap(bmp, 0f, 0f, paint)
-        return bmp
-    }
 }

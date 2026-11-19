@@ -19,8 +19,6 @@ class Config(context: Context) : BaseConfig(context) {
         private const val APPEARANCE_PREFS = "clock_appearance"
         private const val THEME_MODE = "theme_mode"
         private const val COLOR_PALETTE = "color_palette"
-        private const val WIDGET_BACKGROUND_COLOR_SET = "widget_background_color_set"
-        private const val WIDGET_TEXT_COLOR_SET = "widget_text_color_set"
 
         fun newInstance(context: Context) = Config(context)
     }
@@ -40,14 +38,6 @@ class Config(context: Context) : BaseConfig(context) {
             ClockPalette.entries.firstOrNull { it.name == stored } ?: ClockPalette.System
         }
         set(palette) = appearancePrefs.edit { putString(COLOR_PALETTE, palette.name) }
-
-    var widgetBackgroundColorSet: Boolean
-        get() = prefs.getBoolean(WIDGET_BACKGROUND_COLOR_SET, false)
-        set(value) = prefs.edit { putBoolean(WIDGET_BACKGROUND_COLOR_SET, value) }
-
-    var widgetTextColorSet: Boolean
-        get() = prefs.getBoolean(WIDGET_TEXT_COLOR_SET, false)
-        set(value) = prefs.edit { putBoolean(WIDGET_TEXT_COLOR_SET, value) }
 
     val appearance: ClockAppearance
         get() = ClockAppearance(themeMode, colorPalette)

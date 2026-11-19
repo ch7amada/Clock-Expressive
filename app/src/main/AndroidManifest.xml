@@ -113,26 +113,6 @@
             android:exported="false"
             android:theme="@style/Theme.Transparent" />
 
-        <activity
-            android:name=".activities.WidgetDigitalConfigureActivity"
-            android:exported="true"
-            android:screenOrientation="portrait"
-            android:theme="@style/MyWidgetConfigTheme">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".activities.WidgetAnalogueConfigureActivity"
-            android:exported="true"
-            android:screenOrientation="portrait"
-            android:theme="@style/MyWidgetConfigTheme">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-            </intent-filter>
-        </activity>
-
         <service
             android:name=".services.AlarmService"
             android:foregroundServiceType="specialUse">
@@ -220,6 +200,8 @@
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.app.action.NEXT_ALARM_CLOCK_CHANGED" />
+                <action android:name="android.intent.action.UI_MODE_CHANGED" />
+                <action android:name="android.intent.action.WALLPAPER_CHANGED" />
             </intent-filter>
         </receiver>
 
