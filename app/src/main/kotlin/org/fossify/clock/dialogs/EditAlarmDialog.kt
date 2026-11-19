@@ -1,13 +1,10 @@
 package org.fossify.clock.dialogs
 
-import android.app.TimePickerDialog
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.media.RingtoneManager
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
 import org.fossify.clock.R
 import org.fossify.clock.activities.SimpleActivity
 import org.fossify.clock.databinding.DialogEditAlarmBinding
@@ -22,6 +19,7 @@ import org.fossify.clock.helpers.PICK_AUDIO_FILE_INTENT_ID
 import org.fossify.clock.helpers.getCurrentDayMinutes
 import org.fossify.clock.helpers.updateNonRecurringAlarmDay
 import org.fossify.clock.models.Alarm
+import org.fossify.clock.ui.dialogs.showAlarmTimePicker
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.SelectAlarmSoundDialog
 import org.fossify.commons.extensions.addBit
@@ -31,8 +29,6 @@ import org.fossify.commons.extensions.getAlertDialogBuilder
 import org.fossify.commons.extensions.getDefaultAlarmSound
 import org.fossify.commons.extensions.getProperBackgroundColor
 import org.fossify.commons.extensions.getProperTextColor
-import org.fossify.commons.extensions.getTimePickerDialogTheme
-import org.fossify.commons.extensions.isDynamicTheme
 import org.fossify.commons.extensions.removeBit
 import org.fossify.commons.extensions.setupDialogStuff
 import org.fossify.commons.extensions.toast
@@ -54,35 +50,13 @@ class EditAlarmDialog(
 
         binding.apply {
             editAlarmTime.setOnClickListener {
-                if (activity.isDynamicTheme()) {
-                    val timeFormat = if (activity.config.use24HourFormat) {
-                        TimeFormat.CLOCK_24H
-                    } else {
-                        TimeFormat.CLOCK_12H
-                    }
-
-                    val timePicker = MaterialTimePicker.Builder()
-                        .setTimeFormat(timeFormat)
-                        .setHour(alarm.timeInMinutes / 60)
-                        .setMinute(alarm.timeInMinutes % 60)
-                        .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)
-                        .build()
-
-                    timePicker.addOnPositiveButtonClickListener {
-                        timePicked(timePicker.hour, timePicker.minute)
-                    }
-
-                    timePicker.show(activity.supportFragmentManager, "")
-                } else {
-                    TimePickerDialog(
-                        root.context,
-                        root.context.getTimePickerDialogTheme(),
-                        timeSetListener,
-                        alarm.timeInMinutes / 60,
-                        alarm.timeInMinutes % 60,
-                        activity.config.use24HourFormat
-                    ).show()
-                }
+                showAlarmTimePicker(
+                    activity = activity,
+                    initialHour = alarm.timeInMinutes / 60,
+                    initialMinute = alarm.timeInMinutes % 60,
+                    is24Hour = activity.config.use24HourFormat,
+                    onTimePicked = ::timePicked,
+                )
             }
 
             editAlarmSound.colorCompoundDrawable(textColor)
@@ -216,10 +190,6 @@ class EditAlarmDialog(
                 alarm.vibrate = lastConfig.vibrate
             }
         }
-    }
-
-    private val timeSetListener = TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
-        timePicked(hourOfDay, minute)
     }
 
     private fun timePicked(hours: Int, minutes: Int) {
