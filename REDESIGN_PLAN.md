@@ -13,6 +13,7 @@ Initial audit on 2026-11-19 found no root `user_requests/` directory. Recheck be
 - Give each surface a clear focal point and keep contextual actions near their content. Preserve swipe and selection where currently available. In landscape, let readouts and their associated actions or lists sit alongside each other when width permits.
 
 ## Dependency Versions & Design Token Mappings
+- `sh.calvin.reorderable:reorderable:3.1.0` provides lazy-list drag handles and edge autoscroll for existing custom alarm ordering, replacing app-owned drag bookkeeping as screens migrate.
 - Current build uses stable Compose BOM `2026.09.00` (UI and runtime `1.12.1`) with Material 3 explicitly pinned to the approved `1.5.0-beta02`. Its AAR requires compile SDK 37.0. Minimum SDK 26 and target SDK 36 retain their existing values.
 
 - AndroidX release notes dated November 18 list `androidx.compose.material3:material3:1.6.0-alpha01` as the newest alpha. Override the Material 3 version explicitly alongside the documented Compose BOM `2026.11.01`, which documents Compose UI 1.13.0. Verify resolved Material 3 and runtime versions together with `dependencyInsight` before adoption. Google Maven currently returns HTTP 404 for both the announced BOM and Material 3 alpha. The visible Maven metadata ends at alpha BOM 2026.11.00 and Material 3 1.5.0-rc01. Keep the target pin pending publication verification. [Release notes](https://developer.android.com/jetpack/androidx/releases/compose-material3#1.6.0-alpha01) · [BOM mapping](https://developer.android.com/develop/ui/compose/bom/bom-mapping)
@@ -35,7 +36,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Alarm time picker — `EditAlarmDialog.kt` and a new Compose time picker host. Replace both existing theme-dependent picker paths, preserving initialized hour/minute, clock format, validation and cancel contract.
 - [x] Alarm editor — `EditAlarmDialog.kt`. Lead with selected time and group weekday toggles, label, sound, vibration and reminder options; retain add/edit/delete and scheduling callbacks.
 - [x] Alarm and timer sort dialogs — migrate both consumers of the same tonal radio-list dialog, keeping each preference key, default, option order and confirm-only write.
-- [~] Alarm list — `AlarmFragment.kt` and `AlarmsAdapter.kt`. Group alarm time and recurrence in tonal rows with accessible switches, keep selection, add, edit, bulk actions and permission flows.
+- [x] Alarm list — `AlarmFragment.kt` and `AlarmsAdapter.kt`. Group alarm time and recurrence in tonal rows with accessible switches, keep selection, add, edit, bulk actions and permission flows.
 - [ ] Zone picker — `AddTimeZonesDialog.kt` and `SelectTimeZonesAdapter.kt`. Preserve search, selection and confirmation with a scrollable Compose list and stable keys.
 - [ ] Zone editor — `EditTimeZoneDialog.kt`. Preserve label edits, cancellation and deletion behavior.
 - [ ] World clock — `ClockFragment.kt`, `TimeZonesAdapter.kt`, and clock readout views. Feature the local time and next alarm, with date, UTC offsets and zone times in supporting tonal rows. Preserve tick cadence, 12/24-hour format and zone ordering.
@@ -63,3 +64,4 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - Alarm time picker `46095fc4` — verified dial, keypad, confirmation, cancellation, narrow portrait and landscape IME on emulator. Build passed. Unit tests reported `NO-SOURCE`.
 - Alarm editor `e747be3e` — verified edit/new, time picker, weekday and vibration, label and IME, ordinary sound selection, cancellation, and save through first-run permission on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
 - Sort dialogs `afb09bcb` — verified options, persistence on confirm, all dismissal paths, and compact large-font scrolling on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`.
+- Alarm list `2d87c0c4` — verified add, edit, recurring/dayless toggles, scheduling, contextual selection/delete and persisted drag ordering on emulator. Foss debug assembled. Unit tests reported `NO-SOURCE`. Existing Clock next-alarm text can remain stale after bulk delete until its next refresh.
