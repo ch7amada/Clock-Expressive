@@ -53,7 +53,7 @@ Before each dispatch, check the requests directory and clean worktree. Mark one 
 - [x] Typography preference parity — feed the existing Fossify system, monospace, and imported-font choices into both standard and emphasized Compose typography without changing font storage or Commons customization.
 - [x] Settings — `SettingsActivity.kt` and `activity_settings.xml`. Use visually grouped appearance, clock, reminders, widget and data rows with existing resources, preference values and conditional availability.
 - [x] Digital widget configuration — `WidgetDigitalConfigureActivity.kt` and its app-owned configuration layout. Pair a live preview with color and opacity controls, preserving widget result protocol and formatting.
-- [ ] Analogue widget configuration — `WidgetAnalogueConfigureActivity.kt` and its app-owned configuration layout. Match the digital config hierarchy and preserve its analogue face and preference semantics.
+- [~] Analogue widget configuration — `WidgetAnalogueConfigureActivity.kt` and its app-owned configuration layout. Match the digital config hierarchy and preserve its analogue face and preference semantics.
 - [ ] Alarm and timer sound chooser — migrate the app call sites to a Compose chooser while reusing Fossify sound lookup and preserving preview, custom-file permission/result, recent sounds and deletion callbacks.
 - [ ] Permission and first-alarm prompts — use Expressive app-owned message surfaces for permission explanations and the one-time alarm confirmation, preserving Android permission and Settings actions.
 - [ ] Alarm switch preference — apply the existing Fossify checked-thumb icon preference to the Compose Alarm list as well as Settings.
