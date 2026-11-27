@@ -160,8 +160,8 @@ internal fun ClockScreen(
                         MediumFloatingActionButton(
                             onClick = onAdd,
                             modifier = Modifier.align(Alignment.BottomEnd).padding(end = gutter, bottom = 16.dp),
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary,
                         ) {
                             Icon(painterResource(CommonsR.drawable.ic_plus_vector), stringResource(R.string.time_zone))
                         }
@@ -225,7 +225,10 @@ private fun LocalClock(
     val colors = MaterialTheme.colorScheme
     Column {
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = if (compactHeight) 8.dp else 48.dp)
+                .heightIn(min = if (compactHeight) 176.dp else 320.dp),
             shape = RoundedCornerShape(topStart = 60.dp, topEnd = 22.dp, bottomEnd = 60.dp, bottomStart = 22.dp),
             color = colors.primary,
             contentColor = colors.onPrimary,
@@ -234,17 +237,17 @@ private fun LocalClock(
                 modifier = Modifier.padding(
                     start = 12.dp,
                     end = 12.dp,
-                    top = if (compactHeight) 16.dp else 30.dp,
+                    top = if (compactHeight) 28.dp else 52.dp,
                     bottom = 12.dp,
                 ),
-                verticalArrangement = Arrangement.spacedBy(if (compactHeight) 6.dp else 12.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 LocalTime(
                     clockTime,
                     timeZone,
                     use24HourFormat,
                     maxFontSize = if (compactHeight) 82.sp else 96.sp,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).padding(bottom = 12.dp),
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -267,7 +270,7 @@ private fun LocalClock(
                             modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.headlineSmallEmphasized,
                         )
-                        MinuteDial(localDate, Modifier.size(if (compactHeight) 52.dp else 64.dp))
+                        MinuteDial(localDate, Modifier.size(if (compactHeight) 52.dp else 72.dp))
                     }
                 }
             }

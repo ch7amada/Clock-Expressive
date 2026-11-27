@@ -36,20 +36,19 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material.ripple.RippleAlpha
+
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalRippleConfiguration
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationItemIconPosition
-import androidx.compose.material3.RippleConfiguration
-import androidx.compose.material3.RippleDefaults
+
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarArrangement
 import androidx.compose.material3.ShortNavigationBarItem
@@ -57,7 +56,6 @@ import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,8 +68,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
@@ -271,10 +267,10 @@ class MainActivity : SimpleActivity() {
     @Composable
     private fun MainHeader() {
         val tab = MainTab.entries[selectedTab]
-        val (containerColor, contentColor) = tabAccent(tab)
         val hasSort = tab == MainTab.ALARM || tab == MainTab.TIMER
         val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
         val motion = MaterialTheme.motionScheme
+        val colors = MaterialTheme.colorScheme
         val headerInsets = WindowInsets.statusBars.union(WindowInsets.displayCutout)
             .union(WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal))
             .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
@@ -283,31 +279,18 @@ class MainActivity : SimpleActivity() {
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(headerInsets)
-                .padding(start = 24.dp, end = 16.dp, bottom = if (landscape) 2.dp else 6.dp)
-                .heightIn(min = if (landscape) 64.dp else 72.dp),
+                .padding(start = 24.dp, end = 24.dp, bottom = if (landscape) 2.dp else 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.End,
         ) {
-            Text(
-                text = stringResource(tab.label),
-                modifier = Modifier.weight(1f).semantics { heading() },
-                style = if (landscape) {
-                    MaterialTheme.typography.headlineSmallEmphasized
-                } else {
-                    MaterialTheme.typography.headlineLargeEmphasized
-                },
-                autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = if (landscape) 26.sp else 36.sp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
             HorizontalFloatingToolbar(
                 expanded = true,
-                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
-                    toolbarContainerColor = containerColor,
-                    toolbarContentColor = contentColor,
+                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
+                    toolbarContainerColor = colors.surfaceContainerHigh,
+                    toolbarContentColor = colors.onSurface,
                 ),
                 contentPadding = PaddingValues(horizontal = 4.dp),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 28.dp, bottomStart = 16.dp, bottomEnd = 28.dp),
+                shape = CircleShape,
                 expandedShadowElevation = 2.dp,
                 collapsedShadowElevation = 2.dp,
                 leadingContent = {
@@ -318,7 +301,7 @@ class MainActivity : SimpleActivity() {
                         exit = shrinkHorizontally(motion.fastSpatialSpec(), shrinkTowards = Alignment.End) +
                             fadeOut(motion.fastEffectsSpec()),
                     ) {
-                        ToolbarIconButton(onClick = ::showSortDialog, enabled = hasSort) {
+                        IconButton(onClick = ::showSortDialog, enabled = hasSort) {
                             Icon(
                                 painter = painterResource(org.fossify.commons.R.drawable.ic_sort_vector),
                                 contentDescription = stringResource(org.fossify.commons.R.string.sort_by),
@@ -332,30 +315,11 @@ class MainActivity : SimpleActivity() {
         }
     }
 
-    @Suppress("DEPRECATION")
-    @Composable
-    private fun ToolbarIconButton(onClick: () -> Unit, enabled: Boolean = true, icon: @Composable () -> Unit) {
-        val ripple = remember {
-            val alpha = RippleDefaults.RippleAlpha
-            RippleConfiguration(
-                rippleAlpha = RippleAlpha(
-                    draggedAlpha = alpha.draggedAlpha,
-                    focusedAlpha = alpha.focusedAlpha,
-                    hoveredAlpha = alpha.hoveredAlpha,
-                    pressedAlpha = 0f,
-                ),
-            )
-        }
-        CompositionLocalProvider(LocalRippleConfiguration provides ripple) {
-            IconButton(onClick = onClick, enabled = enabled, content = icon)
-        }
-    }
-
     @Composable
     private fun MainOverflowMenu() {
         var expanded by remember { mutableStateOf(false) }
         Box {
-            ToolbarIconButton(onClick = { expanded = true }) {
+            IconButton(onClick = { expanded = true }) {
                 Icon(
                     painter = painterResource(org.fossify.commons.R.drawable.ic_three_dots_vector),
                     contentDescription = stringResource(org.fossify.commons.R.string.more_options),
@@ -415,14 +379,14 @@ class MainActivity : SimpleActivity() {
     private fun MainNavigation(onTabClick: (Int) -> Unit) {
         val colors = MaterialTheme.colorScheme
         val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val dockShape = RoundedCornerShape(topStart = 28.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 28.dp)
+        val dockShape = CircleShape
         val bottomInsets = WindowInsets.navigationBars.union(WindowInsets.ime)
             .union(WindowInsets.displayCutout).only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(bottomInsets)
-                .padding(horizontal = 12.dp, vertical = if (landscape) 4.dp else 8.dp),
+                .padding(horizontal = if (LocalConfiguration.current.screenWidthDp < 360) 12.dp else 24.dp, vertical = if (landscape) 4.dp else 12.dp),
             contentAlignment = Alignment.Center,
         ) {
             ShortNavigationBar(
@@ -433,7 +397,7 @@ class MainActivity : SimpleActivity() {
                     .clip(dockShape)
                     // Keep the width bounded without passing a full-width minimum to each item.
                     .wrapContentWidth(),
-                containerColor = colors.surfaceContainerHigh,
+                containerColor = colors.surfaceContainerHighest,
                 contentColor = colors.onSurface,
                 windowInsets = WindowInsets(0),
                 arrangement = ShortNavigationBarArrangement.EqualWeight,
@@ -477,9 +441,10 @@ class MainActivity : SimpleActivity() {
     @Composable
     private fun tabAccent(tab: MainTab) = with(MaterialTheme.colorScheme) {
         when (tab) {
-            MainTab.CLOCK, MainTab.ALARM -> primaryContainer to onPrimaryContainer
-            MainTab.STOPWATCH -> secondaryContainer to onSecondaryContainer
-            MainTab.TIMER -> tertiaryContainer to onTertiaryContainer
+            MainTab.CLOCK -> primary to onPrimary
+            MainTab.ALARM -> secondary to onSecondary
+            MainTab.STOPWATCH -> secondary to onSecondary
+            MainTab.TIMER -> tertiary to onTertiary
         }
     }
 

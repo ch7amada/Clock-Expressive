@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -101,6 +102,13 @@ internal fun AlarmScreen(
                     .fillMaxWidth()
                     .fillMaxHeight(),
             ) {
+                Text(
+                    text = stringResource(CommonsR.string.alarm),
+                    style = if (compactHeight) MaterialTheme.typography.headlineSmallEmphasized else MaterialTheme.typography.displaySmallEmphasized,
+                    modifier = Modifier
+                        .padding(top = if (compactHeight) 8.dp else 32.dp, start = gutter)
+                        .semantics { heading() },
+                )
                 if (selecting) {
                     SelectionBar(
                         count = selectedIds.size,
@@ -187,8 +195,8 @@ internal fun AlarmScreen(
                             } else {
                                 Modifier.align(Alignment.BottomEnd).padding(end = gutter, bottom = 16.dp)
                             },
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary,
                         ) {
                             Icon(
                                 painter = painterResource(CommonsR.drawable.ic_plus_vector),
@@ -220,7 +228,7 @@ private fun AlarmRow(
         targetValue = when {
             selected -> colors.secondaryContainer
             alarm.enabled -> colors.primaryContainer
-            else -> colors.surface
+            else -> colors.surfaceContainerLow
         },
         animationSpec = motion.fastEffectsSpec(),
         label = "Alarm row color",
@@ -242,7 +250,7 @@ private fun AlarmRow(
     val contentColor = when {
         selected -> colors.onSecondaryContainer
         alarm.enabled -> colors.onPrimaryContainer
-        else -> colors.onSurfaceVariant
+        else -> colors.onSurface
     }
     val alarmDescription = stringResource(CommonsR.string.alarm)
     Surface(
@@ -263,7 +271,7 @@ private fun AlarmRow(
                 .fillMaxWidth()
                 .then(if (selecting) Modifier.semantics { this.selected = selected } else Modifier)
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                .heightIn(min = if (compactHeight) 78.dp else 96.dp)
+                .heightIn(min = if (compactHeight) 78.dp else 132.dp)
                 .padding(
                     start = 18.dp,
                     end = if (selecting) 6.dp else 14.dp,
@@ -312,20 +320,14 @@ private fun AlarmRow(
 
 @Composable
 private fun EmptyAlarms(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.padding(bottom = 56.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(24.dp),
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_alarm_vector),
-            contentDescription = null,
-            modifier = Modifier.size(32.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         Text(
             text = stringResource(R.string.no_alarms_found),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(32.dp),
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
         )

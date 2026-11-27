@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
@@ -31,7 +32,7 @@ internal val LocalClockAppearance = compositionLocalOf { ClockAppearance() }
 private val ClockShapes = Shapes(
     medium = RoundedCornerShape(12.dp),
     large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )
 
 @Composable
@@ -59,7 +60,8 @@ fun ClockTheme(window: Window? = null, content: @Composable () -> Unit) {
 
     val darkTheme = appearance.mode.isDark(systemDark)
     val scheme = remember(context, configuration, darkTheme, appearance.palette, resumeCount) {
-        context.clockColorScheme(appearance.palette, darkTheme)
+        val base = context.clockColorScheme(appearance.palette, darkTheme)
+        base.copy(surface = lerp(base.surface, base.primary, 0.04f))
     }
     if (window != null) {
         SideEffect {

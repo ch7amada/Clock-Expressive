@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -127,6 +128,17 @@ internal fun TimerScreen(
                     .fillMaxWidth()
                     .fillMaxHeight(),
             ) {
+                Text(
+                    text = stringResource(R.string.timer),
+                    modifier = Modifier.padding(
+                        start = gutter,
+                        top = if (compactLandscape) 8.dp else 32.dp,
+                        end = gutter,
+                        bottom = if (compactLandscape) 4.dp else 16.dp,
+                    ).semantics { heading() },
+                    style = if (compactLandscape) MaterialTheme.typography.headlineSmall
+                        else MaterialTheme.typography.displaySmallEmphasized,
+                )
                 if (selecting) {
                     SelectionBar(
                         count = selectedIds.size,
@@ -219,8 +231,8 @@ internal fun TimerScreen(
                         MediumFloatingActionButton(
                             onClick = onAdd,
                             modifier = Modifier.align(Alignment.BottomEnd).padding(end = gutter, bottom = 16.dp),
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary,
                         ) {
                             Icon(
                                 painter = painterResource(CommonsR.drawable.ic_plus_vector),
@@ -252,7 +264,7 @@ private fun TimerRow(
     val active = timer.canReset
     val motion = MaterialTheme.motionScheme
     val stationCorner by animateDpAsState(
-        targetValue = if (timer.running) 32.dp else 16.dp,
+        targetValue = if (timer.running) 48.dp else 20.dp,
         animationSpec = motion.defaultSpatialSpec(),
         label = "Timer station corner",
     )
@@ -260,7 +272,7 @@ private fun TimerRow(
         timer.running -> colors.tertiary
         active -> colors.tertiaryContainer
         selected -> colors.secondaryContainer
-        else -> colors.surface
+        else -> colors.surfaceContainerLow
     }
     val controlBandOpacity by animateFloatAsState(
         targetValue = if (timer.running) 0.18f else 0.10f,
@@ -347,8 +359,9 @@ private fun TimerRow(
             } else {
                 Column(rowModifier) {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(start = 18.dp, top = 12.dp, end = 18.dp, bottom = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 156.dp)
+                            .padding(start = 18.dp, top = 12.dp, end = 18.dp, bottom = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     ) {
                         TimerReadout(timer, active = true)
                         timer.progress?.let { TimerProgress(it, timer.running) }
@@ -364,7 +377,7 @@ private fun TimerRow(
             }
         } else {
             Row(
-                modifier = rowModifier.heightIn(min = 68.dp).padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                modifier = rowModifier.heightIn(min = 80.dp).padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -399,7 +412,7 @@ private fun TimerReadout(timer: TimerListItem, active: Boolean, compact: Boolean
     }
     val maxFontSize = when {
         compact -> 36.sp
-        active -> 68.sp
+        active -> 88.sp
         else -> 30.sp
     }
     val timeStyle = when {
@@ -466,22 +479,27 @@ private fun TimerControl(
 
 @Composable
 private fun EmptyTimers(modifier: Modifier = Modifier) {
-    Column(
+    Surface(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_hourglass_vector),
-            contentDescription = null,
-            modifier = Modifier.size(32.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = stringResource(R.string.no_timers_found),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-        )
+        Column(
+            modifier = Modifier.padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_hourglass_vector),
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+            )
+            Text(
+                text = stringResource(R.string.no_timers_found),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }

@@ -4,21 +4,27 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -54,47 +60,84 @@ class AboutActivity : SimpleActivity() {
                             .fillMaxSize()
                             .padding(contentPadding)
                             .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_launcher_foreground),
-                            contentDescription = null,
+                        Card(
                             modifier = Modifier
-                                .size(72.dp)
-                                .background(colorResource(R.color.launcher_background), CircleShape),
-                        )
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.headlineMedium,
-                            modifier = Modifier.semantics { heading() },
-                        )
-                        Text(
-                            text = stringResource(CommonsR.string.version_placeholder, BuildConfig.VERSION_NAME),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(text = packageName, style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            text = stringResource(R.string.about_description),
-                            modifier = Modifier.padding(vertical = 8.dp),
-                        )
-                        TextButton(onClick = { launchViewIntent(FORK_URL) }) {
-                            Text(stringResource(R.string.about_source))
+                                .widthIn(max = 680.dp)
+                                .fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ),
+                            elevation = CardDefaults.cardElevation(0.dp),
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Image(
+                                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp),
+                                    )
+                                }
+                                Text(
+                                    text = stringResource(R.string.app_name),
+                                    style = MaterialTheme.typography.displaySmall,
+                                    modifier = Modifier
+                                        .semantics { heading() }
+                                        .fillMaxWidth(),
+                                )
+                                Text(
+                                    text = stringResource(CommonsR.string.version_placeholder, BuildConfig.VERSION_NAME),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    text = packageName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
-                        TextButton(onClick = { launchViewIntent("$FORK_URL/releases") }) {
-                            Text(stringResource(R.string.about_releases))
-                        }
-                        TextButton(onClick = { launchViewIntent("https://github.com/FossifyOrg/Clock") }) {
-                            Text(stringResource(R.string.about_upstream))
-                        }
-                        TextButton(onClick = ::openFaq) {
-                            Text(stringResource(CommonsR.string.frequently_asked_questions))
-                        }
-                        TextButton(onClick = { launchViewIntent("$FORK_URL/blob/HEAD/LICENSE") }) {
-                            Text(stringResource(R.string.about_license))
-                        }
-                        TextButton(onClick = ::openThirdPartyLicenses) {
-                            Text(stringResource(CommonsR.string.third_party_licences))
+
+                        Column(
+                            modifier = Modifier
+                                .widthIn(max = 680.dp)
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.about_description),
+                                modifier = Modifier.padding(bottom = 12.dp),
+                            )
+                            TextButton(onClick = { launchViewIntent(FORK_URL) }) {
+                                Text(stringResource(R.string.about_source))
+                            }
+                            TextButton(onClick = { launchViewIntent("$FORK_URL/releases") }) {
+                                Text(stringResource(R.string.about_releases))
+                            }
+                            TextButton(onClick = { launchViewIntent("https://github.com/FossifyOrg/Clock") }) {
+                                Text(stringResource(R.string.about_upstream))
+                            }
+                            TextButton(onClick = ::openFaq) {
+                                Text(stringResource(CommonsR.string.frequently_asked_questions))
+                            }
+                            TextButton(onClick = { launchViewIntent("$FORK_URL/blob/HEAD/LICENSE") }) {
+                                Text(stringResource(R.string.about_license))
+                            }
+                            TextButton(onClick = ::openThirdPartyLicenses) {
+                                Text(stringResource(CommonsR.string.third_party_licences))
+                            }
                         }
                     }
                 }

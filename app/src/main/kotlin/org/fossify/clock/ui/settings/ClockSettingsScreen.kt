@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
@@ -152,7 +153,7 @@ internal fun ClockSettingsScreen(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.surface,
         contentWindowInsets = WindowInsets.navigationBars.union(WindowInsets.displayCutout)
-            .only(WindowInsetsSides.Bottom),
+            .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
         topBar = { ClockTopBar(CommonsR.string.settings, onBack) },
     ) { contentPadding ->
         BoxWithConstraints(
@@ -165,10 +166,11 @@ internal fun ClockSettingsScreen(
             val gutter = if (maxWidth < 360.dp) 16.dp else 24.dp
             Column(
                 modifier = Modifier
+                    .widthIn(max = 680.dp)
                     .fillMaxSize()
                     .verticalScroll(scrollState)
                     .padding(horizontal = gutter, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 AppearancePanel(
                     appearance = appearance,
@@ -345,9 +347,9 @@ private fun AppearancePanel(
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp, bottomStart = 24.dp, bottomEnd = 24.dp),
-        color = colors.primaryContainer,
-        contentColor = colors.onPrimaryContainer,
+        shape = RoundedCornerShape(topStart = 48.dp, topEnd = 48.dp, bottomStart = 28.dp, bottomEnd = 28.dp),
+        color = colors.primary,
+        contentColor = colors.onPrimary,
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
@@ -358,9 +360,9 @@ private fun AppearancePanel(
                 Text(
                     text = stringResource(CommonsR.string.color_customization),
                     modifier = Modifier.weight(1f).semantics { heading() },
-                    style = MaterialTheme.typography.headlineSmallEmphasized,
+                    style = MaterialTheme.typography.headlineMediumEmphasized,
                 )
-                Surface(shape = MaterialShapes.Cookie6Sided.toShape(), color = colors.primary, contentColor = colors.onPrimary) {
+                Surface(shape = MaterialShapes.Cookie6Sided.toShape(), color = colors.primaryContainer, contentColor = colors.onPrimaryContainer) {
                     Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                         Icon(painterResource(CommonsR.drawable.ic_edit_vector), contentDescription = null)
                     }

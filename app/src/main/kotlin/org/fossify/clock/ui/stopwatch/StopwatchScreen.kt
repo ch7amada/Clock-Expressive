@@ -160,8 +160,13 @@ internal fun StopwatchScreen(
                 }
             }
         } else {
+            val topGap = when {
+                state.status == Stopwatch.State.STOPPED -> (maxHeight * 0.20f).coerceIn(48.dp, 164.dp)
+                state.laps.isNotEmpty() -> 24.dp
+                else -> 48.dp
+            }
             Column(
-                modifier = Modifier.widthIn(max = 536.dp).fillMaxWidth().padding(horizontal = gutter, vertical = 16.dp),
+                modifier = Modifier.widthIn(max = 536.dp).fillMaxWidth().padding(start = gutter, top = topGap, end = gutter, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 controls()
@@ -207,7 +212,7 @@ private fun StopwatchControls(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         val style = MaterialTheme.typography.displayLargeEmphasized.copy(
-            fontSize = if (compactFace) 60.sp else 88.sp,
+            fontSize = if (compactFace) 60.sp else 96.sp,
             fontFeatureSettings = "tnum",
             letterSpacing = (-0.045).em,
         )
@@ -224,7 +229,10 @@ private fun StopwatchControls(
             Box(
                 modifier = Modifier.fillMaxWidth()
                     .clickable(role = Role.Button, onClickLabel = toggleLabel, onClick = onToggle)
-                    .heightIn(min = if (compactFace) 100.dp else 196.dp)
+                    .heightIn(
+                        min = if (compactFace) 100.dp else 280.dp,
+                        max = if (compactFace) 140.dp else 320.dp,
+                    )
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
