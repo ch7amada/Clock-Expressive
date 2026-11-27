@@ -2,9 +2,7 @@ package org.fossify.clock.ui.timer
 
 import android.animation.ValueAnimator
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,9 +19,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
@@ -40,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,20 +55,22 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.fossify.clock.R
+import org.fossify.clock.ui.components.CardBounceState
 import org.fossify.clock.ui.components.SelectionBar
 import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyListState
+import sh.calvin.reorderable.rememberReorderableLazyGridState
 import org.fossify.commons.R as CommonsR
 
 @Immutable
@@ -100,11 +102,12 @@ internal fun TimerScreen(
     onScrollComplete: (Int) -> Unit,
 ) {
     val selecting = selectedIds.isNotEmpty()
-    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+    val cardBounce = remember { CardBounceState() }
     val haptics = LocalHapticFeedback.current
     val bottomPadding = if (selecting) 16.dp else 104.dp
-    val reorderState = rememberReorderableLazyListState(
-        lazyListState = listState,
+    val reorderState = rememberReorderableLazyGridState(
+        lazyGridState = gridState,
         scrollThresholdPadding = PaddingValues(bottom = bottomPadding),
     ) { from, to ->
         onMove(from.key as Int, to.key as Int)
@@ -113,7 +116,7 @@ internal fun TimerScreen(
     val targetIndex = timers.orEmpty().indexOfFirst { it.id == timerIdToScrollTo }
     LaunchedEffect(timerIdToScrollTo, targetIndex) {
         if (timerIdToScrollTo != null && targetIndex >= 0) {
-            listState.animateScrollToItem(targetIndex)
+            gridState.animateScrollToItem(targetIndex)
             onScrollComplete(timerIdToScrollTo)
         }
     }
@@ -122,23 +125,15 @@ internal fun TimerScreen(
         BoxWithConstraints(contentAlignment = Alignment.TopCenter) {
             val gutter = if (maxWidth < 400.dp) 16.dp else 24.dp
             val compactLandscape = maxWidth >= 480.dp && maxHeight < 280.dp
+            val columns = if (
+                timers.orEmpty().size < 2 || maxWidth < 320.dp || LocalDensity.current.fontScale > 1.3f
+            ) 1 else 2
             Column(
                 modifier = Modifier
                     .widthIn(max = 680.dp)
                     .fillMaxWidth()
                     .fillMaxHeight(),
             ) {
-                Text(
-                    text = stringResource(R.string.timer),
-                    modifier = Modifier.padding(
-                        start = gutter,
-                        top = if (compactLandscape) 8.dp else 32.dp,
-                        end = gutter,
-                        bottom = if (compactLandscape) 4.dp else 16.dp,
-                    ).semantics { heading() },
-                    style = if (compactLandscape) MaterialTheme.typography.headlineSmall
-                        else MaterialTheme.typography.displaySmallEmphasized,
-                )
                 if (selecting) {
                     SelectionBar(
                         count = selectedIds.size,
@@ -157,29 +152,33 @@ internal fun TimerScreen(
                         )
                     }
                     val placement = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
-                    LazyColumn(
+                        .takeIf { animatePlacement }
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(columns),
                         modifier = Modifier.fillMaxSize(),
-                        state = listState,
+                        state = gridState,
                         contentPadding = PaddingValues(
                             start = gutter,
                             top = if (compactLandscape) 4.dp else 12.dp,
                             end = if (compactLandscape && !selecting) gutter + 88.dp else gutter,
                             bottom = if (compactLandscape && !selecting) 12.dp else bottomPadding,
                         ),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        items(timers.orEmpty(), key = { it.id }) { timer ->
+                        itemsIndexed(timers.orEmpty(), key = { _, timer -> timer.id }) { index, timer ->
                             ReorderableItem(
                                 state = reorderState,
                                 key = timer.id,
                                 animateItemModifier = Modifier.animateItem(
                                     fadeInSpec = null,
-                                    placementSpec = placement.takeIf { animatePlacement },
+                                    placementSpec = placement,
                                     fadeOutSpec = null,
                                 ),
                             ) { isDragging ->
                                 TimerRow(
                                     timer = timer,
+                                    modifier = cardBounce.modifier(timer.running, index, columns),
                                     compactLandscape = compactLandscape,
                                     selected = timer.id in selectedIds,
                                     selecting = selecting,
@@ -249,6 +248,7 @@ internal fun TimerScreen(
 @Composable
 private fun TimerRow(
     timer: TimerListItem,
+    modifier: Modifier,
     compactLandscape: Boolean,
     selected: Boolean,
     selecting: Boolean,
@@ -272,18 +272,13 @@ private fun TimerRow(
         timer.running -> colors.tertiary
         active -> colors.tertiaryContainer
         selected -> colors.secondaryContainer
-        else -> colors.surfaceContainerLow
+        else -> colors.surfaceContainerHigh
     }
-    val controlBandOpacity by animateFloatAsState(
-        targetValue = if (timer.running) 0.18f else 0.10f,
-        animationSpec = motion.fastEffectsSpec(),
-        label = "Timer control band",
-    )
     val stationContent = when {
         timer.running -> colors.onTertiary
         active -> colors.onTertiaryContainer
         selected -> colors.onSecondaryContainer
-        else -> colors.onSurface
+        else -> colors.onSurfaceVariant
     }
     val toggleDescription = stringResource(
         when {
@@ -298,144 +293,86 @@ private fun TimerRow(
         .combinedClickable(onClick = onClick, onLongClick = onLongClick)
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = if (active) {
-            RoundedCornerShape(topStart = stationCorner, topEnd = 12.dp, bottomEnd = stationCorner, bottomStart = 12.dp)
-        } else {
-            RoundedCornerShape(8.dp)
-        },
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(
+            topStart = stationCorner.coerceAtLeast(0.dp),
+            topEnd = 12.dp,
+            bottomEnd = stationCorner.coerceAtLeast(0.dp),
+            bottomStart = 12.dp,
+        ),
         color = stationColor,
         contentColor = stationContent,
-        border = when {
-            selected -> BorderStroke(2.dp, stationContent)
-            !active -> BorderStroke(1.dp, colors.outlineVariant)
-            else -> null
-        },
+        border = if (selected) BorderStroke(2.dp, stationContent) else null,
         shadowElevation = if (isDragging) 6.dp else 0.dp,
     ) {
-        if (active) {
-            val controls: @Composable () -> Unit = {
-                TimerControl(
-                    icon = CommonsR.drawable.ic_restart_alt_vector,
-                    description = stringResource(R.string.stopwatch_reset),
-                    enabled = controlsEnabled,
-                    color = stationColor,
-                    contentColor = stationContent,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = onReset,
+        Column(
+            modifier = rowModifier
+                .fillMaxWidth()
+                .heightIn(min = if (compactLandscape) 132.dp else 246.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        ) {
+            if (timer.label.isNotEmpty()) {
+                Text(
+                    text = timer.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Center,
                 )
-                TimerControl(
-                    icon = toggleIcon,
-                    description = toggleDescription,
-                    enabled = controlsEnabled,
-                    color = stationContent,
-                    contentColor = stationColor,
-                    shape = if (timer.running) RoundedCornerShape(16.dp) else CircleShape,
-                    width = 72.dp,
-                    onClick = onToggle,
-                )
-                if (selecting) dragHandle()
             }
-            val bandColor = stationContent.copy(alpha = controlBandOpacity)
-            if (compactLandscape) {
-                Column(rowModifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            TimerReadout(timer, active = true, compact = true)
-                        }
-                        Row(
-                            modifier = Modifier.background(bandColor, RoundedCornerShape(16.dp)).padding(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            controls()
-                        }
-                    }
-                    timer.progress?.let { TimerProgress(it, timer.running, height = 18.dp) }
-                }
-            } else {
-                Column(rowModifier) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 156.dp)
-                            .padding(start = 18.dp, top = 12.dp, end = 18.dp, bottom = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-                    ) {
-                        TimerReadout(timer, active = true)
-                        timer.progress?.let { TimerProgress(it, timer.running) }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().background(bandColor).padding(horizontal = 12.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        controls()
-                    }
-                }
+            Text(
+                text = timer.time,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = if (compactLandscape) 54.sp else 112.sp),
+                style = MaterialTheme.typography.displayLargeEmphasized.copy(
+                    fontFeatureSettings = "tnum",
+                    fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Light,
+                    textGeometricTransform = TextGeometricTransform(scaleX = 0.57f),
+                    lineHeight = TextUnit.Unspecified,
+                    letterSpacing = 0.sp,
+                ),
+            )
+            Box(Modifier.fillMaxWidth().height(22.dp)) {
+                timer.progress?.let { TimerProgress(it, timer.running) }
             }
-        } else {
             Row(
-                modifier = rowModifier.heightIn(min = 80.dp).padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(Modifier.weight(1f)) {
-                    TimerReadout(timer, active = false)
+                if (active) {
+                    TimerControl(
+                        icon = CommonsR.drawable.ic_restart_alt_vector,
+                        description = stringResource(R.string.stopwatch_reset),
+                        enabled = controlsEnabled,
+                        color = stationContent.copy(alpha = 0.14f),
+                        contentColor = stationContent,
+                        shape = RoundedCornerShape(12.dp),
+                        onClick = onReset,
+                    )
                 }
                 TimerControl(
                     icon = toggleIcon,
                     description = toggleDescription,
                     enabled = controlsEnabled,
-                    color = colors.primaryContainer,
-                    contentColor = colors.onPrimaryContainer,
-                    shape = CircleShape,
+                    color = if (active) stationContent else colors.primaryContainer,
+                    contentColor = if (active) stationColor else colors.onPrimaryContainer,
+                    shape = if (timer.running) RoundedCornerShape(16.dp) else CircleShape,
+                    width = 64.dp,
                     onClick = onToggle,
                 )
-                if (selecting) dragHandle()
             }
+            if (selecting) dragHandle()
         }
     }
 }
 
 @Composable
-private fun TimerReadout(timer: TimerListItem, active: Boolean, compact: Boolean = false) {
-    val typography = MaterialTheme.typography
-    if (timer.label.isNotEmpty()) {
-        Text(
-            text = timer.label,
-            style = if (active) typography.titleMedium else typography.bodyMedium,
-            maxLines = if (compact) 1 else 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-    val maxFontSize = when {
-        compact -> 36.sp
-        active -> 88.sp
-        else -> 30.sp
-    }
-    val timeStyle = when {
-        compact -> typography.displaySmallEmphasized
-        active -> typography.displayLargeEmphasized
-        else -> typography.headlineSmallEmphasized
-    }
-    Text(
-        text = timer.time,
-        modifier = Modifier.fillMaxWidth(),
-        maxLines = 1,
-        autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = maxFontSize),
-        style = timeStyle.copy(fontFeatureSettings = "tnum"),
-    )
-}
-
-@Composable
-private fun TimerProgress(progress: Float, running: Boolean, height: Dp = 22.dp) {
+private fun TimerProgress(progress: Float, running: Boolean) {
     val color = LocalContentColor.current
     val stroke = with(LocalDensity.current) { Stroke(6.dp.toPx(), cap = StrokeCap.Round) }
     LinearWavyProgressIndicator(
         progress = { progress },
-        modifier = Modifier.fillMaxWidth().height(height).clearAndSetSemantics { hideFromAccessibility() },
+        modifier = Modifier.fillMaxSize().clearAndSetSemantics { hideFromAccessibility() },
         color = color,
         trackColor = color.copy(alpha = 0.32f),
         stroke = stroke,

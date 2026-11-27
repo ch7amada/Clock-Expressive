@@ -19,41 +19,56 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MediumFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import org.fossify.clock.R
-import org.fossify.clock.ui.components.ClockSwitch
+import org.fossify.clock.ui.components.CardBounceState
 import org.fossify.clock.ui.components.SelectionBar
 import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyListState
+import sh.calvin.reorderable.rememberReorderableLazyGridState
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 import org.fossify.commons.R as CommonsR
 
 @Immutable
@@ -79,11 +94,12 @@ internal fun AlarmScreen(
     onClearSelection: () -> Unit,
 ) {
     val selecting = selectedIds.isNotEmpty()
-    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
+    val cardBounce = remember { CardBounceState() }
     val haptics = LocalHapticFeedback.current
     val bottomPadding = if (selecting) 16.dp else 104.dp
-    val reorderState = rememberReorderableLazyListState(
-        lazyListState = listState,
+    val reorderState = rememberReorderableLazyGridState(
+        lazyGridState = gridState,
         scrollThresholdPadding = PaddingValues(bottom = bottomPadding),
     ) { from, to ->
         onMove(from.key as Int, to.key as Int)
@@ -96,19 +112,13 @@ internal fun AlarmScreen(
             val gutter = if (maxWidth < 400.dp) 16.dp else 24.dp
             val wideCompact = compactHeight && maxWidth >= 600.dp
             val useSideAction = wideCompact && !selecting
+            val columns = if (maxWidth < 320.dp || LocalDensity.current.fontScale > 1.3f) 1 else 2
             Column(
                 modifier = Modifier
                     .widthIn(max = 680.dp)
                     .fillMaxWidth()
                     .fillMaxHeight(),
             ) {
-                Text(
-                    text = stringResource(CommonsR.string.alarm),
-                    style = if (compactHeight) MaterialTheme.typography.headlineSmallEmphasized else MaterialTheme.typography.displaySmallEmphasized,
-                    modifier = Modifier
-                        .padding(top = if (compactHeight) 8.dp else 32.dp, start = gutter)
-                        .semantics { heading() },
-                )
                 if (selecting) {
                     SelectionBar(
                         count = selectedIds.size,
@@ -123,18 +133,20 @@ internal fun AlarmScreen(
                         EmptyAlarms(Modifier.align(Alignment.Center).padding(horizontal = gutter))
                     }
                     val placement = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
-                    LazyColumn(
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(columns),
                         modifier = Modifier.fillMaxSize(),
-                        state = listState,
+                        state = gridState,
                         contentPadding = PaddingValues(
                             start = gutter,
                             top = 12.dp,
                             end = if (useSideAction) gutter + 96.dp else gutter,
                             bottom = if (useSideAction) 16.dp else bottomPadding,
                         ),
-                        verticalArrangement = Arrangement.spacedBy(if (compactHeight) 8.dp else 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        items(alarms.orEmpty(), key = { it.id }) { alarm ->
+                        itemsIndexed(alarms.orEmpty(), key = { _, alarm -> alarm.id }) { index, alarm ->
                             ReorderableItem(
                                 state = reorderState,
                                 key = alarm.id,
@@ -142,6 +154,7 @@ internal fun AlarmScreen(
                             ) { isDragging ->
                                 AlarmRow(
                                     alarm = alarm,
+                                    modifier = cardBounce.modifier(alarm.enabled, index, columns),
                                     selected = alarm.id in selectedIds,
                                     selecting = selecting,
                                     isDragging = isDragging,
@@ -213,6 +226,7 @@ internal fun AlarmScreen(
 @Composable
 private fun AlarmRow(
     alarm: AlarmListItem,
+    modifier: Modifier,
     selected: Boolean,
     selecting: Boolean,
     isDragging: Boolean,
@@ -227,18 +241,14 @@ private fun AlarmRow(
     val color by animateColorAsState(
         targetValue = when {
             selected -> colors.secondaryContainer
-            alarm.enabled -> colors.primaryContainer
-            else -> colors.surfaceContainerLow
+            alarm.enabled -> colors.primary
+            else -> colors.surfaceContainerHigh
         },
         animationSpec = motion.fastEffectsSpec(),
         label = "Alarm row color",
     )
     val borderColor by animateColorAsState(
-        targetValue = when {
-            selected -> colors.primary
-            !alarm.enabled -> colors.outlineVariant
-            else -> Color.Transparent
-        },
+        targetValue = if (selected) colors.onSecondaryContainer else Color.Transparent,
         animationSpec = motion.fastEffectsSpec(),
         label = "Alarm row outline",
     )
@@ -249,12 +259,12 @@ private fun AlarmRow(
     )
     val contentColor = when {
         selected -> colors.onSecondaryContainer
-        alarm.enabled -> colors.onPrimaryContainer
-        else -> colors.onSurface
+        alarm.enabled -> colors.onPrimary
+        else -> colors.onSurfaceVariant
     }
     val alarmDescription = stringResource(CommonsR.string.alarm)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(
             topStart = corner.coerceAtLeast(0.dp),
             topEnd = 14.dp,
@@ -266,54 +276,105 @@ private fun AlarmRow(
         border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
         shadowElevation = if (isDragging) 6.dp else 0.dp,
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (selecting) Modifier.semantics { this.selected = selected } else Modifier)
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                .heightIn(min = if (compactHeight) 78.dp else 132.dp)
-                .padding(
-                    start = 18.dp,
-                    end = if (selecting) 6.dp else 14.dp,
-                    top = if (compactHeight) 8.dp else 10.dp,
-                    bottom = if (compactHeight) 8.dp else 10.dp,
-                ),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .heightIn(min = if (compactHeight) 132.dp else 246.dp)
+                .padding(start = 12.dp, end = 12.dp, top = 11.dp, bottom = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = alarm.time,
-                    maxLines = 1,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = if (compactHeight) 38.sp else 44.sp),
-                    style = MaterialTheme.typography.displaySmallEmphasized.copy(fontFeatureSettings = "tnum"),
-                )
-                if (alarm.label.isNotEmpty()) {
-                    Text(text = alarm.label, style = MaterialTheme.typography.titleMedium)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (alarm.isNext) {
+                    Icon(
+                        painterResource(R.drawable.ic_alarm_filled_vector),
+                        contentDescription = stringResource(R.string.upcoming_alarm),
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (alarm.isNext) {
-                        Icon(
-                            painterResource(R.drawable.ic_alarm_filled_vector),
-                            contentDescription = stringResource(R.string.upcoming_alarm),
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                    Text(text = alarm.days, style = MaterialTheme.typography.bodyMedium)
+                Text(text = alarm.days, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+            }
+            AlarmTimeReadout(alarm.time, alarm.enabled, compactHeight)
+            if (alarm.label.isNotEmpty()) {
+                Text(text = alarm.label, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Switch(
+                    checked = alarm.enabled,
+                    onCheckedChange = onToggle,
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                        .semantics { contentDescription = "$alarmDescription ${alarm.time}" },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = colors.primary,
+                        checkedTrackColor = colors.onPrimary,
+                        checkedBorderColor = colors.primary,
+                    ),
+                )
+                if (selecting) dragHandle()
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlarmTimeReadout(formattedTime: String, enabled: Boolean, compactHeight: Boolean) {
+    val time = formattedTime.substringBefore(' ')
+    val hours = time.substringBefore(':').padStart(2, DecimalFormatSymbols.getInstance().zeroDigit)
+    val minutes = time.substringAfter(':')
+    val period = formattedTime.substringAfter(' ', missingDelimiterValue = "").uppercase(Locale.getDefault())
+    val numerals = MaterialTheme.typography.displayLargeEmphasized.copy(
+        fontFeatureSettings = "tnum",
+        fontWeight = if (enabled) FontWeight.ExtraBold else FontWeight.Light,
+        lineHeight = 0.87.em,
+        lineHeightStyle = LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.Both,
+            mode = LineHeightStyle.Mode.Tight,
+        ),
+        letterSpacing = 0.sp,
+    )
+
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(
+            modifier = Modifier.clearAndSetSemantics { contentDescription = formattedTime },
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = hours,
+                modifier = Modifier.weight(1f, fill = false),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = if (compactHeight) 80.sp else 190.sp),
+                style = numerals.copy(textGeometricTransform = TextGeometricTransform(scaleX = 0.28f)),
+            )
+            Column(
+                modifier = Modifier.weight(1f, fill = false).padding(top = if (compactHeight) 2.dp else 5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = minutes,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = if (compactHeight) 50.sp else 116.sp),
+                    style = numerals.copy(textGeometricTransform = TextGeometricTransform(scaleX = 0.44f)),
+                )
+                if (period.isNotEmpty()) {
+                    Text(
+                        text = period,
+                        style = MaterialTheme.typography.labelLarge.copy(lineHeight = TextUnit.Unspecified),
+                        fontSize = if (compactHeight) 14.sp else 18.sp,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
-
-            ClockSwitch(
-                checked = alarm.enabled,
-                onCheckedChange = onToggle,
-                modifier = Modifier
-                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                    .semantics { contentDescription = "$alarmDescription ${alarm.time}" },
-            )
-            if (selecting) dragHandle()
         }
     }
 }

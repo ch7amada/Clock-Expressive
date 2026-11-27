@@ -12,3 +12,4 @@ fastlane/fastlane.json
 fastlane/report.xml
 .kotlin/
 material-expressive-guidelines/
+screenshots/
