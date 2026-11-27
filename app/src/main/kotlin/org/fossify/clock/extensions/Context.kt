@@ -70,7 +70,6 @@ import org.fossify.commons.extensions.notificationManager
 import org.fossify.commons.extensions.rotateLeft
 import org.fossify.commons.extensions.showErrorToast
 import org.fossify.commons.extensions.toInt
-import org.fossify.commons.extensions.toast
 import org.fossify.commons.helpers.FRIDAY_BIT
 import org.fossify.commons.helpers.MINUTE_SECONDS
 import org.fossify.commons.helpers.MONDAY_BIT
@@ -172,7 +171,7 @@ fun Context.createNewTimer(): Timer {
     )
 }
 
-fun Context.showRemainingTimeMessage(triggerInMillis: Long) {
+internal fun Context.createRemainingTimeToast(triggerInMillis: Long): Toast {
     val totalSeconds = triggerInMillis.milliseconds.inWholeSeconds.toInt()
     val remainingTime = if (totalSeconds >= MINUTE_SECONDS) {
         val roundedMinutes = ceil(totalSeconds / MINUTE_SECONDS.toFloat()).toInt()
@@ -181,11 +180,10 @@ fun Context.showRemainingTimeMessage(triggerInMillis: Long) {
         formatSecondsToTimeString(totalSeconds)
     }
 
-    toast(
-        msg = String.format(
-            getString(org.fossify.commons.R.string.time_remaining), remainingTime
-        ),
-        length = Toast.LENGTH_LONG
+    return Toast.makeText(
+        this,
+        getString(org.fossify.commons.R.string.time_remaining, remainingTime),
+        Toast.LENGTH_LONG,
     )
 }
 

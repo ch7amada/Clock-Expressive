@@ -3,10 +3,13 @@ package org.fossify.clock.helpers
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import org.fossify.clock.extensions.cancelAlarmClock
+import org.fossify.clock.extensions.createRemainingTimeToast
 import org.fossify.clock.extensions.dbHelper
 import org.fossify.clock.extensions.setupAlarmClock
-import org.fossify.clock.extensions.showRemainingTimeMessage
 import org.fossify.clock.extensions.updateWidgets
 import org.fossify.clock.models.Alarm
 import org.fossify.clock.models.AlarmEvent
@@ -16,6 +19,7 @@ import org.fossify.commons.extensions.showErrorToast
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.greenrobot.eventbus.EventBus
 import java.util.Calendar
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Centralized class for handling alarm operations including dismissal, cancellation, scheduling,
@@ -26,6 +30,10 @@ class AlarmController(
     private val db: DBHelper,
     private val bus: EventBus,
 ) {
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val latestToastRequest = AtomicInteger()
+    private var remainingTimeToast: Toast? = null
+
     /**
      * Reschedules all enabled alarms.
      * Skips rescheduling one-time alarms that were set for today but whose time has already passed,
@@ -47,8 +55,18 @@ class AlarmController(
      * @param showToasts If true, a remaining time toast will be shown for the alarm.
      */
     fun scheduleNextOccurrence(alarm: Alarm, showToasts: Boolean = false) {
+        val toastRequest = if (showToasts) latestToastRequest.incrementAndGet() else null
         ensureBackgroundThread {
-            scheduleNextAlarm(alarm, showToasts)
+            val triggerTimeMillis = scheduleNextAlarm(alarm)
+            if (toastRequest != null && triggerTimeMillis != null) {
+                mainHandler.post {
+                    if (toastRequest != latestToastRequest.get()) return@post
+                    remainingTimeToast?.cancel()
+                    val toast = context.createRemainingTimeToast(triggerTimeMillis - System.currentTimeMillis())
+                    remainingTimeToast = toast
+                    toast.show()
+                }
+            }
             notifyObservers()
         }
     }
@@ -193,15 +211,10 @@ class AlarmController(
         }
     }
 
-    private fun scheduleNextAlarm(alarm: Alarm, showToast: Boolean = false) {
-        val triggerTimeMillis = getTimeOfNextAlarm(alarm)?.timeInMillis ?: return
+    private fun scheduleNextAlarm(alarm: Alarm): Long? {
+        val triggerTimeMillis = getTimeOfNextAlarm(alarm)?.timeInMillis ?: return null
         context.setupAlarmClock(alarm = alarm, triggerTimeMillis = triggerTimeMillis)
-
-        if (showToast) {
-            val now = Calendar.getInstance()
-            val triggerInMillis = triggerTimeMillis - now.timeInMillis
-            context.showRemainingTimeMessage(triggerInMillis)
-        }
+        return triggerTimeMillis
     }
 
     private fun notifyObservers() {
