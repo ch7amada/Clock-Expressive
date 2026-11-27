@@ -1,0 +1,3 @@
+Redesigns alarms and timers with animated card grids and larger time displays.
+Refines the clock, stopwatch, settings, and About screens.
+Replaces queued alarm countdown messages with the latest countdown.
